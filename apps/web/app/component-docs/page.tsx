@@ -10,8 +10,7 @@ export const metadata: Metadata = {
 
 export default function ComponentDocsPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-7xl space-y-12 px-6 py-10 md:px-8 md:py-12">
+    <div className="mx-auto max-w-7xl space-y-12 py-4 md:py-6">
         <header className="space-y-2 border-b border-border pb-8">
           <p className="text-sm font-medium text-muted-foreground">
             Internal · Design System
@@ -37,7 +36,6 @@ export default function ComponentDocsPage() {
           description="Business-level components composed from atoms."
           entries={componentRegistry.molecules}
         />
-      </div>
     </div>
   )
 }

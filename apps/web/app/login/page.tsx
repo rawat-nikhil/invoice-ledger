@@ -16,7 +16,7 @@ import {
 import { ApiError, login } from "@/lib/api";
 import { isAuthenticated, setToken } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { Avatar } from "@/components/atoms";
+import { BrandLogo } from "@/components/atoms";
 
 const LOGIN_HEADING = "Welcome to Invoice Ledger";
 const HIGHLIGHT = "Invoice Ledger";
@@ -26,7 +26,6 @@ const TYPEWRITER_DELAY_MS = 50;
 
 function LoginHeading() {
   const [charCount, setCharCount] = useState(0);
-
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -121,13 +120,7 @@ export default function LoginPage() {
         <LoginHeading />
         <Card className="w-full shadow-sm">
           <CardHeader className="items-center justify-items-center text-center">
-            <Avatar
-              src="/vercel.svg"
-              alt="Acme Corp"
-              shape="square"
-              size="lg"
-              className="bg-black p-2 mb-3"
-            />
+            <BrandLogo size="lg" className="mb-3" />
             <CardTitle>Sign in</CardTitle>
             <CardDescription>
               Enter the shared password to access the ledger.

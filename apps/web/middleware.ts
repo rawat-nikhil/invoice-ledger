@@ -5,12 +5,10 @@ const COOKIE_NAME = "auth_token";
 const LOGIN_PATH = "/login";
 const DASHBOARD_PATH = "/dashboard";
 
-const PROTECTED_PREFIXES = ["/dashboard"];
+const PUBLIC_PATHS = [LOGIN_PATH];
 
-function isProtectedPath(pathname: string): boolean {
-  return PROTECTED_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.includes(pathname);
 }
 
 export function middleware(request: NextRequest) {
@@ -23,7 +21,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (isProtectedPath(pathname) && !token) {
+  if (!isPublicPath(pathname) && !token) {
     const url = request.nextUrl.clone();
     url.pathname = LOGIN_PATH;
     return NextResponse.redirect(url);
@@ -33,5 +31,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/component-docs/:path*", "/login"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };
