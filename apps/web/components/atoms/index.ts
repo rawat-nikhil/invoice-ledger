@@ -6,3 +6,9 @@ export {
   type ButtonProps,
 } from "./button"
 export { Input, type InputProps } from "./input"
+export {
+  Avatar,
+  type AtomAvatarShape,
+  type AtomAvatarSize,
+  type AvatarProps,
+} from "./avatar"

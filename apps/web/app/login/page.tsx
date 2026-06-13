@@ -16,6 +16,67 @@ import {
 import { ApiError, login } from "@/lib/api";
 import { isAuthenticated, setToken } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { Avatar } from "@/components/atoms";
+
+const LOGIN_HEADING = "Welcome to Invoice Ledger";
+const HIGHLIGHT = "Invoice Ledger";
+const HIGHLIGHT_START = LOGIN_HEADING.indexOf(HIGHLIGHT);
+const HIGHLIGHT_END = HIGHLIGHT_START + HIGHLIGHT.length;
+const TYPEWRITER_DELAY_MS = 50;
+
+function LoginHeading() {
+  const [charCount, setCharCount] = useState(0);
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (prefersReducedMotion) {
+      setCharCount(LOGIN_HEADING.length);
+      return;
+    }
+
+    if (charCount >= LOGIN_HEADING.length) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setCharCount((current) => current + 1);
+    }, TYPEWRITER_DELAY_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [charCount]);
+
+  const visible = LOGIN_HEADING.slice(0, charCount);
+  const before = visible.slice(0, Math.min(visible.length, HIGHLIGHT_START));
+  const highlight =
+    visible.length > HIGHLIGHT_START
+      ? visible.slice(
+          HIGHLIGHT_START,
+          Math.min(visible.length, HIGHLIGHT_END),
+        )
+      : "";
+  const after =
+    visible.length > HIGHLIGHT_END ? visible.slice(HIGHLIGHT_END) : "";
+  const isTyping = charCount < LOGIN_HEADING.length;
+
+  return (
+    <h1
+      aria-label={LOGIN_HEADING}
+      className="min-h-14 text-center text-xl font-semibold tracking-tight"
+    >
+      {before}
+      {highlight ? <span className="text-green-500">{highlight}</span> : null}
+      {after}
+      {isTyping ? (
+        <span aria-hidden className="animate-pulse">
+          |
+        </span>
+      ) : null}
+    </h1>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -56,60 +117,66 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-sm shadow-sm">
-        <CardHeader className="items-center text-center">
-          <div
-            aria-hidden
-            className="mb-2 h-16 w-16 rounded-lg bg-muted"
-          />
-          <CardTitle>Sign in</CardTitle>
-          <CardDescription>
-            Enter the shared password to access the ledger.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-            <div className="relative">
-              <Input
-                autoComplete="current-password"
-                className="pr-10"
-                id="password"
-                name="password"
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-              />
-              <button
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                onClick={() => setShowPassword((current) => !current)}
-                type="button"
+      <div className="flex w-full max-w-sm flex-col gap-6">
+        <LoginHeading />
+        <Card className="w-full shadow-sm">
+          <CardHeader className="items-center justify-items-center text-center">
+            <Avatar
+              src="/vercel.svg"
+              alt="Acme Corp"
+              shape="square"
+              size="lg"
+              className="bg-black p-2 mb-3"
+            />
+            <CardTitle>Sign in</CardTitle>
+            <CardDescription>
+              Enter the shared password to access the ledger.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+              <div className="relative">
+                <Input
+                  autoComplete="current-password"
+                  className="pr-10"
+                  id="password"
+                  name="password"
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                />
+                <button
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={() => setShowPassword((current) => !current)}
+                  type="button"
+                >
+                  {showPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
+                </button>
+              </div>
+
+              {error ? (
+                <p className="text-sm text-destructive" role="alert">
+                  {error}
+                </p>
+              ) : null}
+
+              <Button
+                className={cn("w-full")}
+                disabled={!password.trim() || isSubmitting}
+                type="submit"
               >
-                {showPassword ? (
-                  <EyeOff className="size-4" />
-                ) : (
-                  <Eye className="size-4" />
-                )}
-              </button>
-            </div>
-
-            {error ? (
-              <p className="text-sm text-destructive" role="alert">
-                {error}
-              </p>
-            ) : null}
-
-            <Button
-              className={cn("w-full")}
-              disabled={!password.trim() || isSubmitting}
-              type="submit"
-            >
-              {isSubmitting ? "Signing in..." : "Sign in"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+                {isSubmitting ? "Signing in..." : "Sign in"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
