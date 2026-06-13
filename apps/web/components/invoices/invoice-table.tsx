@@ -69,7 +69,7 @@ export function InvoiceTable({
     <div className="rounded-lg border">
       <Table>
         <TableHeader>
-          <TableRow className="hover:bg-transparent">
+          <TableRow className="hover:bg-transparent [&>th]:font-semibold">
             <TableHead>Invoice #</TableHead>
             <TableHead>Month-Year</TableHead>
             <TableHead>Total Bill</TableHead>
