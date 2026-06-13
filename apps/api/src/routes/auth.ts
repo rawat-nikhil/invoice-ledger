@@ -2,7 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import type { UserSession } from "@repo/types";
+import type { LoginResponse } from "@repo/types";
 
 const loginSchema = z.object({
   password: z.string().min(1),
@@ -30,13 +30,11 @@ authRouter.post("/login", async (req, res) => {
     return res.status(401).json({ error: "Invalid credentials" });
   }
 
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const token = jwt.sign({ sub: "user" }, jwtSecret, { expiresIn: "7d" });
+  const token = jwt.sign({ authenticated: true }, jwtSecret, {
+    expiresIn: "1h",
+  });
 
-  const session: UserSession = {
-    token,
-    expiresAt: expiresAt.toISOString(),
-  };
+  const response: LoginResponse = { token };
 
-  return res.json(session);
+  return res.json(response);
 });

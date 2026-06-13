@@ -1,6 +1,6 @@
 import { createElement, type ComponentType, type ReactNode } from "react"
 
-import { Badge, Button, Input } from "@/components/atoms"
+import { Avatar, Badge, Button, Input } from "@/components/atoms"
 import {
   DeleteInvoiceButton,
   InvoiceStatusBadge,
@@ -11,6 +11,7 @@ import {
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -43,6 +44,31 @@ function CardPreview() {
       createElement(CardTitle, null, "Card title")
     ),
     createElement(CardContent, null, "Content area for grouped UI.")
+  )
+}
+
+const AVATAR_PREVIEW_SRC = "/vercel.svg"
+
+function AvatarCardPreview() {
+  return createElement(
+    Card,
+    { className: "w-full max-w-xs" },
+    createElement(
+      CardHeader,
+      { className: "flex flex-row items-center gap-3" },
+      createElement(Avatar, {
+        src: AVATAR_PREVIEW_SRC,
+        alt: "Acme Corp",
+        shape: "square",
+        size: "md",
+      }),
+      createElement(
+        "div",
+        null,
+        createElement(CardTitle, null, "Acme Corp"),
+        createElement(CardDescription, null, "Invoice #1042")
+      )
+    )
   )
 }
 
@@ -105,6 +131,57 @@ export const componentRegistry: ComponentRegistry = {
           props: { children: "Destructive", variant: "destructive" },
         },
       ],
+    },
+    {
+      name: "Avatar",
+      description:
+        "Image with fallback; square or circle shape for card thumbnails",
+      component: Avatar as ComponentType<Record<string, unknown>>,
+      previews: [
+        {
+          label: "Square",
+          props: {
+            src: AVATAR_PREVIEW_SRC,
+            alt: "Logo",
+            shape: "square",
+          },
+        },
+        {
+          label: "Circle",
+          props: {
+            src: AVATAR_PREVIEW_SRC,
+            alt: "User",
+            shape: "circle",
+          },
+        },
+        {
+          label: "Fallback",
+          props: { src: "", alt: "Acme Corp", shape: "square" },
+        },
+        {
+          label: "Small",
+          props: {
+            src: AVATAR_PREVIEW_SRC,
+            alt: "Logo",
+            shape: "square",
+            size: "sm",
+          },
+        },
+        {
+          label: "Large",
+          props: {
+            src: AVATAR_PREVIEW_SRC,
+            alt: "Logo",
+            shape: "square",
+            size: "lg",
+          },
+        },
+      ],
+    },
+    {
+      name: "Avatar in Card",
+      description: "Square thumbnail beside card title",
+      render: AvatarCardPreview,
     },
     {
       name: "Card",
