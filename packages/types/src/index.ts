@@ -35,3 +35,31 @@ export interface UserSession {
   token: string;
   expiresAt: string;
 }
+
+export type EmployeeCategory = "skilled" | "semi-skilled";
+export type EmployeeGrade = "A" | "B" | "C";
+
+export interface Employee {
+  id: string;
+  employeeCode: string;
+  name: string;
+  category: EmployeeCategory;
+  grade: EmployeeGrade;
+  department: string;
+  gradeRate: number;
+  basicPay: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEmployeeInput {
+  employeeCode: string;
+  name: string;
+  category: EmployeeCategory;
+  grade: EmployeeGrade;
+  department?: string;
+  gradeRate: number;
+  basicPay: number;
+}
+
+export type UpdateEmployeeInput = Omit<CreateEmployeeInput, "employeeCode">;

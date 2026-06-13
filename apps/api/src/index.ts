@@ -4,6 +4,7 @@ import express from "express";
 import { connectDb, disconnectDb, getDbStatus } from "./db/connect";
 import { authMiddleware } from "./middleware/authMiddleware";
 import { authRouter } from "./routes/auth";
+import { employeesRouter } from "./routes/employees";
 
 dotenv.config();
 
@@ -31,6 +32,8 @@ app.use((req, res, next) => {
   }
   return authMiddleware(req, res, next);
 });
+
+app.use("/employees", employeesRouter);
 
 async function start(): Promise<void> {
   await connectDb();

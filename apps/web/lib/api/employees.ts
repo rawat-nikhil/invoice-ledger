@@ -1,0 +1,59 @@
+import type {
+  CreateEmployeeInput,
+  Employee,
+  UpdateEmployeeInput,
+} from "@repo/types";
+
+import { apiFetch } from "../api";
+
+export type GetEmployeesParams = {
+  search?: string;
+  sort?: string;
+  order?: "asc" | "desc";
+};
+
+export async function getEmployees(
+  params: GetEmployeesParams = {},
+): Promise<Employee[]> {
+  const searchParams = new URLSearchParams();
+
+  if (params.search) {
+    searchParams.set("search", params.search);
+  }
+  if (params.sort) {
+    searchParams.set("sort", params.sort);
+  }
+  if (params.order) {
+    searchParams.set("order", params.order);
+  }
+
+  const query = searchParams.toString();
+  const path = query ? `/employees?${query}` : "/employees";
+
+  return apiFetch<Employee[]>(path);
+}
+
+export async function createEmployee(
+  data: CreateEmployeeInput,
+): Promise<Employee> {
+  return apiFetch<Employee>("/employees", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateEmployee(
+  id: string,
+  data: UpdateEmployeeInput,
+): Promise<Employee> {
+  return apiFetch<Employee>(`/employees/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteEmployee(id: string): Promise<void> {
+  return apiFetch<void>(`/employees/${id}`, {
+    method: "DELETE",
+  });
+}
