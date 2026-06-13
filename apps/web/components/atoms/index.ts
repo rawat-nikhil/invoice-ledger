@@ -12,3 +12,9 @@ export {
   type AtomAvatarSize,
   type AvatarProps,
 } from "./avatar"
+export {
+  BrandLogo,
+  BRAND_LOGO_SRC,
+  BRAND_NAME,
+  type BrandLogoProps,
+} from "./brand-logo"
