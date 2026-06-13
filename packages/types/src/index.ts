@@ -1,17 +1,34 @@
-export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue";
+export type ComplianceStatus = "pending" | "paid" | "not-generated";
+
+export interface ComplianceItem {
+  amount: number;
+  status: ComplianceStatus;
+}
 
 export interface Invoice {
   id: string;
   invoiceNumber: string;
-  clientName: string;
-  amount: number;
-  currency: string;
-  status: InvoiceStatus;
-  issuedAt: string;
-  dueAt: string;
+  monthYear: string;
+  totalBill: number;
+  serviceCharge: number;
+  gst: ComplianceItem;
+  esic: ComplianceItem;
+  settled: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CreateInvoiceInput {
+  invoiceNumber: string;
+  monthYear: string;
+  totalBill: number;
+  serviceCharge: number;
+  gst: ComplianceItem;
+  esic: ComplianceItem;
+  settled: boolean;
+}
+
+export type UpdateInvoiceInput = Omit<CreateInvoiceInput, "invoiceNumber">;
 
 export type LedgerEntryType = "debit" | "credit";
 

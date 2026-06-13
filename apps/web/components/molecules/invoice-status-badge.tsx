@@ -1,25 +1,13 @@
-import type { InvoiceStatus } from "@repo/types"
+import type { ComplianceStatus } from "@repo/types";
 
-import { Badge, type AtomBadgeVariant } from "@/components/atoms/badge"
-
-const statusConfig: Record<
-  InvoiceStatus,
-  { variant: AtomBadgeVariant; label: string }
-> = {
-  draft: { variant: "default", label: "Draft" },
-  sent: { variant: "warning", label: "Sent" },
-  paid: { variant: "success", label: "Paid" },
-  overdue: { variant: "destructive", label: "Overdue" },
-}
+import { ComplianceStatusBadge } from "@/components/invoices/compliance-status-badge";
 
 type InvoiceStatusBadgeProps = {
-  status: InvoiceStatus
-}
+  status: ComplianceStatus;
+};
 
 function InvoiceStatusBadge({ status }: InvoiceStatusBadgeProps) {
-  const { variant, label } = statusConfig[status]
-
-  return <Badge variant={variant}>{label}</Badge>
+  return <ComplianceStatusBadge status={status} />;
 }
 
-export { InvoiceStatusBadge, type InvoiceStatusBadgeProps }
+export { InvoiceStatusBadge, type InvoiceStatusBadgeProps };
