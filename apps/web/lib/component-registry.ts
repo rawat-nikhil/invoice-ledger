@@ -216,13 +216,15 @@ export const componentRegistry: ComponentRegistry = {
     },
     {
       name: "InvoiceStatusBadge",
-      description: "Maps invoice status to a semantic badge",
+      description: "Maps compliance status to a semantic badge",
       component: InvoiceStatusBadge as ComponentType<Record<string, unknown>>,
       previews: [
-        { label: "Draft", props: { status: "draft" } },
-        { label: "Sent", props: { status: "sent" } },
+        { label: "Pending", props: { status: "pending" } },
         { label: "Paid", props: { status: "paid" } },
-        { label: "Overdue", props: { status: "overdue" } },
+        {
+          label: "Not Generated",
+          props: { status: "not-generated" },
+        },
       ],
     },
   ],
