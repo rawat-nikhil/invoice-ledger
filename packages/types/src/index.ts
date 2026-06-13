@@ -27,6 +27,10 @@ export interface LedgerEntry {
   updatedAt: string;
 }
 
+export interface LoginResponse {
+  token: string;
+}
+
 export interface UserSession {
   token: string;
   expiresAt: string;
