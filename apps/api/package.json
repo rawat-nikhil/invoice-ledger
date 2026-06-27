@@ -10,6 +10,7 @@
     "hash-password": "tsx scripts/hash-password.ts"
   },
   "dependencies": {
+    "@repo/payroll": "*",
     "@repo/types": "*",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",

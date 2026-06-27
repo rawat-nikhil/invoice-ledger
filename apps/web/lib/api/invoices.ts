@@ -1,5 +1,6 @@
 import type {
   CreateInvoiceInput,
+  GenerateInvoiceInput,
   Invoice,
   UpdateInvoiceInput,
 } from "@repo/types";
@@ -11,6 +12,15 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export async function getInvoices(): Promise<Invoice[]> {
   return apiFetch<Invoice[]>("/invoices");
+}
+
+export async function generateInvoice(
+  data: GenerateInvoiceInput,
+): Promise<Invoice> {
+  return apiFetch<Invoice>("/invoices/generate", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 }
 
 export async function createInvoice(

@@ -1,16 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { Invoice } from "@repo/types";
 import { Plus } from "lucide-react";
 
 import { InvoiceFormDialog } from "@/components/invoices/invoice-form-dialog";
 import { InvoiceTable } from "@/components/invoices/invoice-table";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { downloadInvoice, getInvoices } from "@/lib/api/invoices";
+import { cn } from "@/lib/utils";
 
-type DialogMode = "create" | "edit" | null;
+type DialogMode = "edit" | null;
 
 export default function InvoicePage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -40,11 +42,6 @@ export default function InvoicePage() {
   useEffect(() => {
     void fetchInvoices();
   }, [fetchInvoices]);
-
-  function openCreateDialog() {
-    setSelectedInvoice(null);
-    setDialogMode("create");
-  }
 
   function openEditDialog(invoice: Invoice) {
     setSelectedInvoice(invoice);
@@ -81,10 +78,13 @@ export default function InvoicePage() {
       </div>
 
       <div className="flex justify-end">
-        <Button type="button" onClick={openCreateDialog}>
+        <Link
+          href="/invoice/generate"
+          className={cn(buttonVariants(), "inline-flex")}
+        >
           <Plus />
-          Add Invoice
-        </Button>
+          Generate Invoice
+        </Link>
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -104,8 +104,8 @@ export default function InvoicePage() {
       )}
 
       <InvoiceFormDialog
-        open={dialogMode === "create" || dialogMode === "edit"}
-        mode={dialogMode === "edit" ? "edit" : "create"}
+        open={dialogMode === "edit"}
+        mode="edit"
         invoice={selectedInvoice}
         onOpenChange={(open) => {
           if (!open) {

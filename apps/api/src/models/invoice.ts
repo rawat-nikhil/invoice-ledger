@@ -1,6 +1,11 @@
 import { Schema, model, models } from "mongoose";
 import type { ComplianceStatus } from "@repo/types";
 
+import {
+  employeePayrollBreakdownSchema,
+  invoiceTotalsSchema,
+} from "./payroll-schemas";
+
 const complianceStatusEnum = [
   "pending",
   "paid",
@@ -29,6 +34,9 @@ const invoiceSchema = new Schema(
     gst: { type: complianceSchema, required: true },
     esic: { type: complianceSchema, required: true },
     settled: { type: Boolean, required: true, default: false },
+    invoiceDate: { type: Date },
+    totals: { type: invoiceTotalsSchema },
+    employeeBreakdown: { type: [employeePayrollBreakdownSchema], default: [] },
   },
   {
     timestamps: true,
@@ -38,6 +46,11 @@ const invoiceSchema = new Schema(
       transform: (_doc, ret: Record<string, unknown>) => {
         ret.id = String(ret._id);
         delete ret._id;
+
+        if (ret.invoiceDate instanceof Date) {
+          ret.invoiceDate = ret.invoiceDate.toISOString().slice(0, 10);
+        }
+
         return ret;
       },
     },

@@ -18,6 +18,8 @@ const employeeSchema = new Schema(
     department: { type: String, required: true, default: "maintenance" },
     gradeRate: { type: Number, required: true },
     basicPay: { type: Number, required: true },
+    adjustmentAllowance: { type: Number, required: true },
+    washingAllowance: { type: Number, required: true },
   },
   {
     timestamps: true,

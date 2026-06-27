@@ -27,7 +27,9 @@ export type EmployeeSortField =
   | "grade"
   | "department"
   | "gradeRate"
-  | "basicPay";
+  | "basicPay"
+  | "adjustmentAllowance"
+  | "washingAllowance";
 
 type EmployeeTableProps = {
   employees: Employee[];
@@ -46,6 +48,9 @@ const COLUMNS: { key: EmployeeSortField; label: string }[] = [
   { key: "department", label: "Department" },
   { key: "gradeRate", label: "Grade Rate" },
   { key: "basicPay", label: "Basic Pay" },
+  { key: "adjustmentAllowance", label: "Adjustment Allowance" },
+  { key: "washingAllowance", label: "Washing Allowance" },
+
 ];
 
 function SortIcon({
@@ -127,6 +132,8 @@ export function EmployeeTable({
                 <TableCell>{employee.department}</TableCell>
                 <TableCell>{employee.gradeRate}</TableCell>
                 <TableCell>{employee.basicPay}</TableCell>
+                <TableCell>{employee.adjustmentAllowance}</TableCell>
+                <TableCell>{employee.washingAllowance}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
                     <Button

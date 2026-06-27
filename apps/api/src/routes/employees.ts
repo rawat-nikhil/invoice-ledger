@@ -12,6 +12,8 @@ const SORTABLE_FIELDS = [
   "department",
   "gradeRate",
   "basicPay",
+  "adjustmentAllowance",
+  "washingAllowance",
   "createdAt",
 ] as const;
 
@@ -23,6 +25,8 @@ const createEmployeeSchema = z.object({
   department: z.string().min(1).optional(),
   gradeRate: z.number(),
   basicPay: z.number(),
+  adjustmentAllowance: z.number(),
+  washingAllowance: z.number(),
 });
 
 const updateEmployeeSchema = z.object({
@@ -32,6 +36,8 @@ const updateEmployeeSchema = z.object({
   department: z.string().min(1),
   gradeRate: z.number(),
   basicPay: z.number(),
+  adjustmentAllowance: z.number(),
+  washingAllowance: z.number(),
 });
 
 export const employeesRouter = Router();

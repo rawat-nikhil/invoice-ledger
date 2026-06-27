@@ -5,6 +5,42 @@ export interface ComplianceItem {
   status: ComplianceStatus;
 }
 
+export interface EmployeeInvoiceInput {
+  employeeId: string;
+  present: number;
+  otHours: number;
+  gradeDays: number;
+  canteenBill: number;
+}
+
+export interface EmployeePayrollBreakdown extends EmployeeInvoiceInput {
+  adjustmentAllowance: number;
+  washingAllowance: number;
+  employeeName: string;
+  employeeCode: string;
+  basicPay: number;
+  gradeRate: number;
+  basicAmount: number;
+  washingAllowanceAmount: number;
+  adjustmentAllowanceAmount: number;
+  gradeAmount: number;
+  otAmount: number;
+  totalKr: number;
+  pf: number;
+  esi: number;
+  payableAmount: number;
+}
+
+export interface InvoiceTotals {
+  totalPf: number;
+  totalEsi: number;
+  serviceCharge: number;
+  total: number;
+  sgst: number;
+  cgst: number;
+  totalPayable: number;
+}
+
 export interface Invoice {
   id: string;
   invoiceNumber: string;
@@ -14,6 +50,9 @@ export interface Invoice {
   gst: ComplianceItem;
   esic: ComplianceItem;
   settled: boolean;
+  invoiceDate?: string;
+  totals?: InvoiceTotals;
+  employeeBreakdown?: EmployeePayrollBreakdown[];
   createdAt: string;
   updatedAt: string;
 }
@@ -29,6 +68,19 @@ export interface CreateInvoiceInput {
 }
 
 export type UpdateInvoiceInput = Omit<CreateInvoiceInput, "invoiceNumber">;
+
+export interface GenerateInvoiceInput {
+  invoiceDate: string;
+  employeeInputs: EmployeeInvoiceInput[];
+}
+
+export interface SalarySlip extends EmployeePayrollBreakdown {
+  id: string;
+  employeeId: string;
+  invoiceId: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export type LedgerEntryType = "debit" | "credit";
 
@@ -65,6 +117,8 @@ export interface Employee {
   department: string;
   gradeRate: number;
   basicPay: number;
+  adjustmentAllowance: number;
+  washingAllowance: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -77,6 +131,8 @@ export interface CreateEmployeeInput {
   department?: string;
   gradeRate: number;
   basicPay: number;
+  adjustmentAllowance: number;
+  washingAllowance: number;
 }
 
 export type UpdateEmployeeInput = Omit<CreateEmployeeInput, "employeeCode">;
