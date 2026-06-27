@@ -1,8 +1,16 @@
 import { Router } from "express";
 import mongoose from "mongoose";
 import { z } from "zod";
-import type { Invoice } from "@repo/types";
+import {
+  calculateEmployeeRow,
+  calculateInvoiceTotals,
+  formatMonthYear,
+} from "@repo/payroll";
+import type { Employee, Invoice } from "@repo/types";
+import { EmployeeModel } from "../models/employee";
 import { InvoiceModel } from "../models/invoice";
+import { SalarySlipModel } from "../models/salary-slip";
+import { getNextInvoiceNumber } from "../utils/invoice-number";
 import { generateInvoicePDF } from "../utils/pdf-generator";
 
 const complianceSchema = z.object({
@@ -29,11 +37,149 @@ const updateInvoiceSchema = z.object({
   settled: z.boolean(),
 });
 
+const employeeInvoiceInputSchema = z.object({
+  employeeId: z.string().min(1),
+  present: z.number().min(0),
+  otHours: z.number().min(0),
+  gradeDays: z.number().min(0),
+  canteenBill: z.number().min(0),
+});
+
+const generateInvoiceSchema = z.object({
+  invoiceDate: z.string().min(1),
+  employeeInputs: z.array(employeeInvoiceInputSchema).min(1),
+});
+
 export const invoicesRouter = Router();
 
 invoicesRouter.get("/", async (_req, res) => {
   const invoices = await InvoiceModel.find().sort({ createdAt: -1 });
   return res.json(invoices.map((invoice) => invoice.toJSON() as Invoice));
+});
+
+invoicesRouter.post("/generate", async (req, res) => {
+  const parsed = generateInvoiceSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Invalid request body" });
+  }
+
+  const { invoiceDate, employeeInputs } = parsed.data;
+  const employeeIds = employeeInputs.map((input) => input.employeeId);
+
+  if (new Set(employeeIds).size !== employeeIds.length) {
+    return res.status(400).json({ error: "Duplicate employee entries" });
+  }
+
+  const invalidIds = employeeIds.filter((id) => !mongoose.isValidObjectId(id));
+
+  if (invalidIds.length > 0) {
+    return res.status(400).json({ error: "Invalid employee ID" });
+  }
+
+  const employees = await EmployeeModel.find({ _id: { $in: employeeIds } });
+
+  if (employees.length !== employeeIds.length) {
+    return res.status(400).json({ error: "One or more employees not found" });
+  }
+
+  const employeeMap = new Map(
+    employees.map((employee) => [String(employee._id), employee.toJSON() as Employee]),
+  );
+
+  const employeeBreakdown = employeeInputs.map((input) => {
+    const employee = employeeMap.get(input.employeeId);
+
+    if (!employee) {
+      throw new Error("Employee not found");
+    }
+
+    return calculateEmployeeRow(employee, input, invoiceDate);
+  });
+
+  const totals = calculateInvoiceTotals(employeeBreakdown);
+  const monthYear = formatMonthYear(invoiceDate);
+
+  const session = await mongoose.startSession();
+
+  try {
+    let createdInvoice: Invoice | null = null;
+
+    await session.withTransaction(async () => {
+      const invoiceNumber = await getNextInvoiceNumber(session);
+
+      const [invoice] = await InvoiceModel.create(
+        [
+          {
+            invoiceNumber,
+            monthYear,
+            invoiceDate: new Date(invoiceDate),
+            totals,
+            employeeBreakdown,
+            totalBill: totals.totalPayable,
+            serviceCharge: totals.serviceCharge,
+            gst: {
+              amount: totals.sgst + totals.cgst,
+              status: "not-generated",
+            },
+            esic: {
+              amount: totals.totalEsi,
+              status: "not-generated",
+            },
+            settled: false,
+          },
+        ],
+        { session },
+      );
+
+      await SalarySlipModel.insertMany(
+        employeeBreakdown.map((row) => ({
+          employeeId: row.employeeId,
+          invoiceId: invoice._id,
+          present: row.present,
+          otHours: row.otHours,
+          gradeDays: row.gradeDays,
+          adjustmentAllowance: row.adjustmentAllowance,
+          washingAllowance: row.washingAllowance,
+          canteenBill: row.canteenBill,
+          employeeName: row.employeeName,
+          employeeCode: row.employeeCode,
+          basicPay: row.basicPay,
+          gradeRate: row.gradeRate,
+          basicAmount: row.basicAmount,
+          washingAllowanceAmount: row.washingAllowanceAmount,
+          adjustmentAllowanceAmount: row.adjustmentAllowanceAmount,
+          gradeAmount: row.gradeAmount,
+          otAmount: row.otAmount,
+          totalKr: row.totalKr,
+          pf: row.pf,
+          esi: row.esi,
+          payableAmount: row.payableAmount,
+        })),
+        { session },
+      );
+
+      createdInvoice = invoice.toJSON() as Invoice;
+    });
+
+    if (!createdInvoice) {
+      return res.status(500).json({ error: "Failed to create invoice" });
+    }
+
+    return res.status(201).json(createdInvoice);
+  } catch (error: unknown) {
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      (error as { code: number }).code === 11000
+    ) {
+      return res.status(409).json({ error: "Invoice number already exists" });
+    }
+
+    throw error;
+  } finally {
+    await session.endSession();
+  }
 });
 
 invoicesRouter.post("/", async (req, res) => {
@@ -119,6 +265,8 @@ invoicesRouter.delete("/:id", async (req, res) => {
   if (!invoice) {
     return res.status(404).json({ error: "Invoice not found" });
   }
+
+  await SalarySlipModel.deleteMany({ invoiceId: id });
 
   return res.status(204).send();
 });

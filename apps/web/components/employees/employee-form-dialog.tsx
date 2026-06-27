@@ -45,6 +45,8 @@ type FormState = {
   department: string;
   gradeRate: string;
   basicPay: string;
+  adjustmentAllowance: string;
+  washingAllowance: string;
 };
 
 const DEFAULT_FORM: FormState = {
@@ -55,6 +57,8 @@ const DEFAULT_FORM: FormState = {
   department: "maintenance",
   gradeRate: "",
   basicPay: "",
+  adjustmentAllowance: "",
+  washingAllowance: ""
 };
 
 function toFormState(employee: Employee): FormState {
@@ -66,6 +70,8 @@ function toFormState(employee: Employee): FormState {
     department: employee.department,
     gradeRate: String(employee.gradeRate),
     basicPay: String(employee.basicPay),
+    adjustmentAllowance: String(employee.adjustmentAllowance),
+    washingAllowance: String(employee.washingAllowance)
   };
 }
 
@@ -98,12 +104,16 @@ export function EmployeeFormDialog({
 
     const gradeRate = Number(form.gradeRate);
     const basicPay = Number(form.basicPay);
+    const adjustmentAllowance = Number(form.adjustmentAllowance);
+    const washingAllowance = Number(form.washingAllowance);
 
     if (
       !form.name.trim() ||
       !form.department.trim() ||
       Number.isNaN(gradeRate) ||
-      Number.isNaN(basicPay)
+      Number.isNaN(basicPay) ||
+      Number.isNaN(adjustmentAllowance) ||
+      Number.isNaN(washingAllowance)
     ) {
       setError("Please fill in all required fields with valid values.");
       setSubmitting(false);
@@ -126,6 +136,8 @@ export function EmployeeFormDialog({
           department: form.department.trim(),
           gradeRate,
           basicPay,
+          adjustmentAllowance,
+          washingAllowance
         };
         await createEmployee(payload);
       } else if (employee) {
@@ -136,6 +148,8 @@ export function EmployeeFormDialog({
           department: form.department.trim(),
           gradeRate,
           basicPay,
+          adjustmentAllowance,
+          washingAllowance
         };
         await updateEmployee(employee.id, payload);
       }
@@ -281,6 +295,40 @@ export function EmployeeFormDialog({
                   setForm((current) => ({
                     ...current,
                     basicPay: event.target.value,
+                  }))
+                }
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="adjustmentAllowance">Adjustment Allowance</Label>
+              <Input
+                id="adjustmentAllowance"
+                type="number"
+                step="any"
+                value={form.adjustmentAllowance}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    adjustmentAllowance: event.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="washigAllowance">Washing Allowance</Label>
+              <Input
+                id="washigAllowance"
+                type="number"
+                step="any"
+                value={form.washingAllowance}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    washingAllowance: event.target.value,
                   }))
                 }
               />
