@@ -40,6 +40,13 @@ const updateEmployeeSchema = z.object({
   washingAllowance: z.number(),
 });
 
+const updateStatusSchema = z.object({
+  isActive: z.boolean(),
+});
+
+const STATUS_VALUES = ["active", "inactive", "all"] as const;
+type StatusFilter = (typeof STATUS_VALUES)[number];
+
 export const employeesRouter = Router();
 
 employeesRouter.get("/", async (req, res) => {
@@ -57,10 +64,27 @@ employeesRouter.get("/", async (req, res) => {
     : "name";
   const sortOrder = orderParam === "desc" ? -1 : 1;
 
-  const filter =
+  const statusParam =
+    typeof req.query.status === "string" ? req.query.status : "active";
+  const status: StatusFilter = STATUS_VALUES.includes(
+    statusParam as StatusFilter,
+  )
+    ? (statusParam as StatusFilter)
+    : "active";
+
+  const statusFilter =
+    status === "active"
+      ? { isActive: { $ne: false } }
+      : status === "inactive"
+        ? { isActive: false }
+        : {};
+
+  const searchFilter =
     search.length > 0
       ? { name: { $regex: search, $options: "i" } }
       : {};
+
+  const filter = { ...searchFilter, ...statusFilter };
 
   const employees = await EmployeeModel.find(filter).sort({
     [sortField]: sortOrder,
@@ -120,18 +144,28 @@ employeesRouter.put("/:id", async (req, res) => {
   return res.json(employee.toJSON() as Employee);
 });
 
-employeesRouter.delete("/:id", async (req, res) => {
+employeesRouter.patch("/:id/status", async (req, res) => {
   const { id } = req.params;
 
   if (!mongoose.isValidObjectId(id)) {
     return res.status(404).json({ error: "Employee not found" });
   }
 
-  const employee = await EmployeeModel.findByIdAndDelete(id);
+  const parsed = updateStatusSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Invalid request body" });
+  }
+
+  const employee = await EmployeeModel.findByIdAndUpdate(
+    id,
+    { isActive: parsed.data.isActive },
+    { new: true, runValidators: true },
+  );
 
   if (!employee) {
     return res.status(404).json({ error: "Employee not found" });
   }
 
-  return res.status(204).send();
+  return res.json(employee.toJSON() as Employee);
 });

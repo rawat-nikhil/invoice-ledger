@@ -119,6 +119,7 @@ export interface Employee {
   basicPay: number;
   adjustmentAllowance: number;
   washingAllowance: number;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -136,3 +137,7 @@ export interface CreateEmployeeInput {
 }
 
 export type UpdateEmployeeInput = Omit<CreateEmployeeInput, "employeeCode">;
+
+export interface UpdateEmployeeStatusInput {
+  isActive: boolean;
+}
