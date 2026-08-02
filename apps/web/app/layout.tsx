@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 
 import { LayoutShell } from "@/components/layout/layout-shell";
@@ -13,6 +13,17 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Invoice Ledger | R.S Engineering",
   description: "Internal invoice ledger system for R.S Engineering",
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({

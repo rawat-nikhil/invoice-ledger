@@ -115,7 +115,8 @@ export function Sidebar() {
           isCollapsedDesktop && "items-center px-2",
         )}
       >
-        {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+        {NAV_ITEMS.map((item) => {
+          const { label, href, icon: Icon } = item;
           const active = isActiveRoute(pathname, href);
 
           return (

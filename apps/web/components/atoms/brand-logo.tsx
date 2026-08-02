@@ -3,7 +3,7 @@
 import { Avatar, type AtomAvatarShape, type AtomAvatarSize } from "./avatar";
 import { cn } from "@/lib/utils";
 
-export const BRAND_LOGO_SRC = "/vercel.svg";
+export const BRAND_LOGO_SRC = "/favicon.png";
 export const BRAND_NAME = "R.S Engineering";
 
 const paddingBySize: Record<AtomAvatarSize, string> = {
