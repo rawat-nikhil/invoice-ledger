@@ -17,20 +17,58 @@
         font-size: 12px;
         line-height: 1.5;
       }
-      h1 {
-        font-size: 22px;
-        font-weight: 600;
-        margin-bottom: 4px;
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
       }
-      .subtitle {
-        color: #666;
-        margin-bottom: 24px;
+      h1 {
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: 1px;
+      }
+      .company-name {
+        font-size: 14px;
+        font-weight: 700;
       }
       .meta {
-        margin-bottom: 24px;
+        margin-bottom: 20px;
       }
       .meta p {
         margin-bottom: 4px;
+        color: #444;
+      }
+      .meta strong {
+        color: #1a1a1a;
+      }
+      .balance-due {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e5e5e5;
+      }
+      .addresses {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 20px;
+      }
+      .addresses .block {
+        flex: 1;
+      }
+      .addresses h2 {
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .addresses p {
+        color: #444;
+        margin-bottom: 2px;
+      }
+      .addresses .contact {
+        margin-top: 8px;
       }
       table {
         width: 100%;
@@ -45,7 +83,6 @@
       }
       th {
         font-weight: 600;
-        background: #f9f9f9;
         font-size: 11px;
       }
       td {
@@ -54,90 +91,153 @@
       .text-right {
         text-align: right;
       }
-      .section-title {
-        font-size: 14px;
-        font-weight: 600;
-        margin-top: 28px;
+      .line-items th {
+        border-bottom: 2px solid #1a1a1a;
+      }
+      .footer-columns {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        margin-top: 24px;
+      }
+      .terms {
+        flex: 1.2;
+      }
+      .terms h3 {
+        font-size: 12px;
+        font-weight: 700;
         margin-bottom: 8px;
       }
-      .totals-table th {
-        width: 55%;
+      .terms ol {
+        padding-left: 16px;
+        color: #444;
       }
-      .totals-table .highlight td {
-        font-weight: 600;
+      .terms li {
+        margin-bottom: 8px;
+      }
+      .totals {
+        flex: 1;
+      }
+      .totals table th {
+        font-weight: 400;
+        color: #444;
+      }
+      .totals .highlight td,
+      .totals .highlight th {
+        font-weight: 700;
         font-size: 13px;
         border-top: 2px solid #1a1a1a;
+        color: #1a1a1a;
       }
-      .footer {
-        margin-top: 40px;
-        color: #999;
+      .notes {
+        margin-top: 32px;
+        color: #444;
         font-size: 11px;
-        text-align: center;
+      }
+      .notes strong {
+        color: #1a1a1a;
       }
     </style>
   </head>
   <body>
-    <h1>Invoice</h1>
-    <p class="subtitle">{{invoiceNumber}} · {{monthYear}}</p>
-
-    <div class="meta">
-      <p><strong>Invoice Date:</strong> {{invoiceDate}}</p>
-      <p><strong>Month-Year:</strong> {{monthYear}}</p>
+    <div class="header">
+      <h1>INVOICE</h1>
+      <p class="company-name">R.S ENGINEERING</p>
     </div>
 
-    <p class="section-title">Employee Breakdown</p>
-    <table>
+    <div class="meta">
+      <p><strong>Invoice number</strong> &nbsp;-&nbsp; {{invoiceNumber}}</p>
+      <p><strong>Date</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{invoiceDate}}</p>
+      <p><strong>GSTIN</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;09AMIPR8113R1Z6</p>
+      <p><strong>PAN number</strong> &nbsp;AMIPR8113R</p>
+    </div>
+
+    <p class="balance-due">Balance Due - {{totalPayable}}</p>
+
+    <div class="addresses">
+      <div class="block">
+        <h2>R.S ENGINEERING</h2>
+        <p>UG-2/35, Ambika Homes</p>
+        <p>Shyam Park Extension,</p>
+        <p>Sahibabad, U.P., India</p>
+        <p>201005</p>
+        <div class="contact">
+          <p>rsengineering2025@gmail.com</p>
+          <p>9899067141</p>
+          <p><strong>HSN CODE GSR - 9987</strong></p>
+        </div>
+      </div>
+      <div class="block">
+        <h2>Bill to:</h2>
+        <p>SFC SOLUTIONS INDIA PVT. LTD.,</p>
+        <p>Plot no. 24A, Site 4, link road,</p>
+        <p>Sahibabad, U.P., 201005, INDIA</p>
+        <p style="margin-top: 8px"><strong>GSTIN - 09AAACW0019N1Z8</strong></p>
+      </div>
+    </div>
+
+    <table class="line-items">
       <thead>
         <tr>
-          <th>Code</th>
-          <th>Name</th>
-          <th class="text-right">Present</th>
-          <th class="text-right">Basic</th>
-          <th class="text-right">Grade</th>
-          <th class="text-right">OT</th>
-          <th class="text-right">Total KR</th>
-          <th class="text-right">PF</th>
-          <th class="text-right">ESI</th>
-          <th class="text-right">Payable</th>
+          <th>Description</th>
+          <th class="text-right">Amount</th>
         </tr>
       </thead>
       <tbody>
-        {{employeeRows}}
+        <tr>
+          <td>Primitive maintenance charges</td>
+          <td class="text-right">{{subtotal}}</td>
+        </tr>
       </tbody>
     </table>
 
-    <p class="section-title">Invoice Summary</p>
-    <table class="totals-table">
-      <tr>
-        <th>Total PF</th>
-        <td class="text-right">{{totalPf}}</td>
-      </tr>
-      <tr>
-        <th>Total ESI</th>
-        <td class="text-right">{{totalEsi}}</td>
-      </tr>
-      <tr>
-        <th>Service Charge</th>
-        <td class="text-right">{{serviceCharge}}</td>
-      </tr>
-      <tr>
-        <th>Total</th>
-        <td class="text-right">{{total}}</td>
-      </tr>
-      <tr>
-        <th>SGST (9%)</th>
-        <td class="text-right">{{sgst}}</td>
-      </tr>
-      <tr>
-        <th>CGST (9%)</th>
-        <td class="text-right">{{cgst}}</td>
-      </tr>
-      <tr class="highlight">
-        <th>Total Payable</th>
-        <td class="text-right">{{totalPayable}}</td>
-      </tr>
-    </table>
+    <div class="footer-columns">
+      <div class="terms">
+        <h3>TERMS &amp; CONDITIONS</h3>
+        <ol>
+          <li>All disputes are subject to U.P. jurisdiction.</li>
+          <li>Any concern regarding the bill should be reported within 48 hours of receipt.</li>
+          <li>Late payments are subject to a 1.5% monthly finance charge.</li>
+        </ol>
+      </div>
+      <div class="totals">
+        <table>
+          <tr>
+            <th>Subtotal</th>
+            <td class="text-right">{{subtotal}}</td>
+          </tr>
+          <tr>
+            <th>PF (13%)</th>
+            <td class="text-right">{{totalPf}}</td>
+          </tr>
+          <tr>
+            <th>ESI (3.25%)</th>
+            <td class="text-right">{{totalEsi}}</td>
+          </tr>
+          <tr>
+            <th>Service charge (6%)</th>
+            <td class="text-right">{{serviceCharge}}</td>
+          </tr>
+          <tr>
+            <th>CGST (9%)</th>
+            <td class="text-right">{{cgst}}</td>
+          </tr>
+          <tr>
+            <th>SGST (9%)</th>
+            <td class="text-right">{{sgst}}</td>
+          </tr>
+          <tr class="highlight">
+            <th>Balance Due</th>
+            <td class="text-right">{{totalPayable}}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
 
-    <p class="footer">Generated by Invoice Ledger · R.S Engineering</p>
+    <p class="notes">
+      <strong>Notes:-</strong> If you have any concern regarding this
+      invoice, please contact at the email provided above. Thank you for
+      your business.
+    </p>
   </body>
 </html>

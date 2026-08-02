@@ -11,5 +11,6 @@ export {
   calculateEmployeeRow,
   calculateInvoiceTotals,
   formatMonthYear,
+  getCalendarDaysInMonth,
 } from "./calculate";
 export { round2 } from "./round";

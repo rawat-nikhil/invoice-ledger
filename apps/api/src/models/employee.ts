@@ -1,5 +1,5 @@
 import { Schema, model, models } from "mongoose";
-import type { EmployeeCategory, EmployeeGrade } from "@repo/types";
+import { EmployeeCategoryEnum, EmployeeGradeEnum, type EmployeeCategory, type EmployeeGrade } from "@repo/types";
 
 const employeeSchema = new Schema(
   {
@@ -8,12 +8,12 @@ const employeeSchema = new Schema(
     category: {
       type: String,
       required: true,
-      enum: ["skilled", "semi-skilled"] satisfies EmployeeCategory[],
+      enum: Object.values(EmployeeCategoryEnum),
     },
     grade: {
       type: String,
       required: true,
-      enum: ["A", "B", "C"] satisfies EmployeeGrade[],
+      enum: Object.values(EmployeeGradeEnum),
     },
     department: { type: String, required: true, default: "maintenance" },
     gradeRate: { type: Number, required: true },

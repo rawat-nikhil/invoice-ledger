@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type {
-  CreateEmployeeInput,
-  Employee,
-  EmployeeCategory,
-  EmployeeGrade,
-  UpdateEmployeeInput,
+import {
+  EmployeeCategoryEnum,
+  EmployeeGradeEnum,
+  type CreateEmployeeInput,
+  type Employee,
+  type EmployeeCategory,
+  type EmployeeGrade,
+  type UpdateEmployeeInput,
 } from "@repo/types";
 
 import { Button } from "@/components/ui/button";
@@ -52,8 +54,8 @@ type FormState = {
 const DEFAULT_FORM: FormState = {
   employeeCode: "",
   name: "",
-  category: "skilled",
-  grade: "A",
+  category: EmployeeCategoryEnum.SKILLED,
+  grade: EmployeeGradeEnum.A,
   department: "maintenance",
   gradeRate: "",
   basicPay: "",
@@ -223,8 +225,9 @@ export function EmployeeFormDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="skilled">Skilled</SelectItem>
-                  <SelectItem value="semi-skilled">Semi-skilled</SelectItem>
+                  <SelectItem value={EmployeeCategoryEnum.SKILLED}>Skilled</SelectItem>
+                  <SelectItem value={EmployeeCategoryEnum.SEMI_SKILLED}>Semi-skilled</SelectItem>
+                  <SelectItem value={EmployeeCategoryEnum.UNSKILLED}>Un-skilled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -244,9 +247,9 @@ export function EmployeeFormDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="A">A</SelectItem>
-                  <SelectItem value="B">B</SelectItem>
-                  <SelectItem value="C">C</SelectItem>
+                  <SelectItem value={EmployeeGradeEnum.A}>A</SelectItem>
+                  <SelectItem value={EmployeeGradeEnum.B}>B</SelectItem>
+                  <SelectItem value={EmployeeGradeEnum.C}>C</SelectItem>
                 </SelectContent>
               </Select>
             </div>
