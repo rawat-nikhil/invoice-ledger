@@ -17,7 +17,7 @@ import {
 } from "./constants";
 import { round2 } from "./round";
 
-function getCalendarDaysInMonth(isoDate: string): number {
+export function getCalendarDaysInMonth(isoDate: string): number {
   const date = new Date(isoDate);
   return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 }

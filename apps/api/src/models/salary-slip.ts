@@ -4,6 +4,7 @@ const salarySlipSchema = new Schema(
   {
     employeeId: { type: Schema.Types.ObjectId, ref: "Employee", required: true },
     invoiceId: { type: Schema.Types.ObjectId, ref: "Invoice", required: true },
+    monthYear: { type: String, required: true },
     present: { type: Number, required: true },
     otHours: { type: Number, required: true },
     gradeDays: { type: Number, required: true },
@@ -41,6 +42,7 @@ const salarySlipSchema = new Schema(
 );
 
 salarySlipSchema.index({ invoiceId: 1, employeeId: 1 });
+salarySlipSchema.index({ monthYear: 1 });
 
 export const SalarySlipModel =
   models.SalarySlip ?? model("SalarySlip", salarySlipSchema, "salary_slips");

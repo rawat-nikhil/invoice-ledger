@@ -78,6 +78,7 @@ export interface SalarySlip extends EmployeePayrollBreakdown {
   id: string;
   employeeId: string;
   invoiceId: string;
+  monthYear: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -105,8 +106,18 @@ export interface UserSession {
   expiresAt: string;
 }
 
-export type EmployeeCategory = "skilled" | "semi-skilled";
-export type EmployeeGrade = "A" | "B" | "C";
+export type EmployeeCategory = typeof EmployeeCategoryEnum[keyof typeof EmployeeCategoryEnum];
+export enum EmployeeCategoryEnum {
+  SKILLED = "skilled",
+  SEMI_SKILLED = "semi-skilled",
+  UNSKILLED = "un-skilled",
+}
+export type EmployeeGrade = typeof EmployeeGradeEnum[keyof typeof EmployeeGradeEnum];
+export enum EmployeeGradeEnum {
+  A = "A",
+  B = "B",
+  C = "C",
+}
 
 export interface Employee {
   id: string;

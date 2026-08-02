@@ -1,6 +1,6 @@
 "use client";
 
-import type { Employee } from "@repo/types";
+import { EmployeeCategoryEnum, type Employee } from "@repo/types";
 import {
   ArrowDown,
   ArrowUp,
@@ -74,7 +74,16 @@ function SortIcon({
 }
 
 function formatCategory(category: Employee["category"]): string {
-  return category === "semi-skilled" ? "Semi-skilled" : "Skilled";
+  switch (category) {
+    case EmployeeCategoryEnum.SEMI_SKILLED:
+      return "Semi-skilled";
+    case EmployeeCategoryEnum.SKILLED:
+      return "Skilled";
+    case EmployeeCategoryEnum.UNSKILLED:
+      return "Un-skilled";
+    default:
+      return "Skilled";
+  }
 }
 
 export function EmployeeTable({

@@ -1,4 +1,7 @@
 import type { Employee, EmployeeInvoiceInput } from "@repo/types";
+import { formatMonthYear, getCalendarDaysInMonth } from "@repo/payroll";
+
+import { toIsoDate } from "@/lib/format";
 
 export type EmployeeInputFormRow = EmployeeInvoiceInput & {
   employeeName: string;
@@ -17,10 +20,14 @@ export function createEmptyEmployeeInput(employee: Employee): EmployeeInputFormR
 
 export function validateEmployeeInputs(
   inputs: EmployeeInputFormRow[],
+  invoiceDate: Date,
 ): string | null {
   if (inputs.length === 0) {
     return "At least one employee is required.";
   }
+
+  const daysInMonth = getCalendarDaysInMonth(toIsoDate(invoiceDate));
+  const monthYear = formatMonthYear(toIsoDate(invoiceDate));
 
   for (const row of inputs) {
     const fields: Array<[string, number]> = [
@@ -36,12 +43,12 @@ export function validateEmployeeInputs(
       }
     }
 
-    if (row.present > 26) {
-      return `Present days cannot exceed 26 for ${row.employeeName}.`;
+    if (row.present > daysInMonth) {
+      return `Present days cannot exceed ${daysInMonth} for ${monthYear} (${row.employeeName}).`;
     }
 
-    if (row.gradeDays > 26) {
-      return `Grade days cannot exceed 26 for ${row.employeeName}.`;
+    if (row.gradeDays > daysInMonth) {
+      return `Grade days cannot exceed ${daysInMonth} for ${monthYear} (${row.employeeName}).`;
     }
   }
 

@@ -1,7 +1,10 @@
 "use client";
 
+import { useRef } from "react";
 import type { EmployeePayrollBreakdown } from "@repo/types";
+import { Upload } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -34,6 +37,9 @@ type EmployeeInputStepProps = {
     field: NumericField,
     value: string,
   ) => void;
+  onImportFile?: (file: File) => void;
+  importing?: boolean;
+  importMessage?: string | null;
 };
 
 export function EmployeeInputStep({
@@ -41,7 +47,12 @@ export function EmployeeInputStep({
   loading,
   error,
   onRowChange,
+  onImportFile,
+  importing = false,
+  importMessage = null,
 }: EmployeeInputStepProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   if (loading) {
     return (
       <p className="text-sm text-muted-foreground">Loading employees...</p>
@@ -50,6 +61,37 @@ export function EmployeeInputStep({
 
   return (
     <div className="space-y-4">
+      {onImportFile ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) {
+                onImportFile(file);
+              }
+              event.target.value = "";
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={importing}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="size-4" />
+            {importing ? "Importing..." : "Import from Excel"}
+          </Button>
+          {importMessage ? (
+            <p className="text-sm text-muted-foreground">{importMessage}</p>
+          ) : null}
+        </div>
+      ) : null}
+
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       <div className="overflow-x-auto rounded-lg border">

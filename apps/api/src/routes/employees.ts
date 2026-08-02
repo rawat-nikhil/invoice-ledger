@@ -1,7 +1,7 @@
 import { Router } from "express";
 import mongoose from "mongoose";
 import { z } from "zod";
-import type { Employee } from "@repo/types";
+import { EmployeeCategoryEnum, EmployeeGradeEnum, type Employee } from "@repo/types";
 import { EmployeeModel } from "../models/employee";
 
 const SORTABLE_FIELDS = [
@@ -20,8 +20,8 @@ const SORTABLE_FIELDS = [
 const createEmployeeSchema = z.object({
   employeeCode: z.string().min(1),
   name: z.string().min(1),
-  category: z.enum(["skilled", "semi-skilled"]),
-  grade: z.enum(["A", "B", "C"]),
+  category: z.enum(Object.values(EmployeeCategoryEnum)),
+  grade: z.enum(Object.values(EmployeeGradeEnum)),
   department: z.string().min(1).optional(),
   gradeRate: z.number(),
   basicPay: z.number(),
@@ -31,8 +31,8 @@ const createEmployeeSchema = z.object({
 
 const updateEmployeeSchema = z.object({
   name: z.string().min(1),
-  category: z.enum(["skilled", "semi-skilled"]),
-  grade: z.enum(["A", "B", "C"]),
+  category: z.enum(Object.values(EmployeeCategoryEnum)),
+  grade: z.enum(Object.values(EmployeeGradeEnum)),
   department: z.string().min(1),
   gradeRate: z.number(),
   basicPay: z.number(),
