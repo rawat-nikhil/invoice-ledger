@@ -70,11 +70,13 @@ export default function InvoicePage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Invoice</h1>
-        <p className="text-muted-foreground">
-          Manage monthly invoices, compliance status, and PDF exports.
-        </p>
+      <div className="flex items-start gap-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Invoice</h1>
+          <p className="text-muted-foreground">
+            Manage monthly invoices, compliance status, and PDF exports.
+          </p>
+        </div>
       </div>
 
       <div className="flex justify-end">

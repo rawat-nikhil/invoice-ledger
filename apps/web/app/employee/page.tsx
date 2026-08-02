@@ -31,7 +31,7 @@ export default function EmployeePage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [sort, setSort] = useState<EmployeeSortField>("name");
+  const [sort, setSort] = useState<EmployeeSortField>("employeeCode");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
