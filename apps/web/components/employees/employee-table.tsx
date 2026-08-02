@@ -1,14 +1,16 @@
 "use client";
 
-import type { Employee } from "@repo/types";
+import { EmployeeCategoryEnum, type Employee } from "@repo/types";
 import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
   Pencil,
-  Trash2,
+  UserCheck,
+  UserX,
 } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -37,7 +39,7 @@ type EmployeeTableProps = {
   order: "asc" | "desc";
   onSort: (field: EmployeeSortField) => void;
   onEdit: (employee: Employee) => void;
-  onDelete: (employee: Employee) => void;
+  onToggleStatus: (employee: Employee) => void;
 };
 
 const COLUMNS: { key: EmployeeSortField; label: string }[] = [
@@ -74,7 +76,16 @@ function SortIcon({
 }
 
 function formatCategory(category: Employee["category"]): string {
-  return category === "semi-skilled" ? "Semi-skilled" : "Skilled";
+  switch (category) {
+    case EmployeeCategoryEnum.SEMI_SKILLED:
+      return "Semi-skilled";
+    case EmployeeCategoryEnum.SKILLED:
+      return "Skilled";
+    case EmployeeCategoryEnum.UNSKILLED:
+      return "Un-skilled";
+    default:
+      return "Skilled";
+  }
 }
 
 export function EmployeeTable({
@@ -83,7 +94,7 @@ export function EmployeeTable({
   order,
   onSort,
   onEdit,
-  onDelete,
+  onToggleStatus,
 }: EmployeeTableProps) {
   return (
     <div className="rounded-lg border">
@@ -107,14 +118,19 @@ export function EmployeeTable({
                 </button>
               </TableHead>
             ))}
+<<<<<<< HEAD
             <TableHead className="w-25 text-right">Actions</TableHead>
+=======
+            <TableHead>Status</TableHead>
+            <TableHead className="w-[100px] text-right">Actions</TableHead>
+>>>>>>> cd12d42dd501d3e77e925d292ab1104c84ebac21
           </TableRow>
         </TableHeader>
         <TableBody>
           {employees.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={COLUMNS.length + 1}
+                colSpan={COLUMNS.length + 2}
                 className="h-24 text-center text-muted-foreground"
               >
                 No employees found.
@@ -134,6 +150,11 @@ export function EmployeeTable({
                 <TableCell>{employee.basicPay}</TableCell>
                 <TableCell>{employee.adjustmentAllowance}</TableCell>
                 <TableCell>{employee.washingAllowance}</TableCell>
+                <TableCell>
+                  <Badge variant={employee.isActive ? "success" : "outline"}>
+                    {employee.isActive ? "Active" : "Inactive"}
+                  </Badge>
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
                     <Button
@@ -149,10 +170,18 @@ export function EmployeeTable({
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      aria-label={`Delete ${employee.name}`}
-                      onClick={() => onDelete(employee)}
+                      aria-label={
+                        employee.isActive
+                          ? `Deactivate ${employee.name}`
+                          : `Reactivate ${employee.name}`
+                      }
+                      onClick={() => onToggleStatus(employee)}
                     >
-                      <Trash2 className="text-destructive" />
+                      {employee.isActive ? (
+                        <UserX className="text-destructive" />
+                      ) : (
+                        <UserCheck className="text-success" />
+                      )}
                     </Button>
                   </div>
                 </TableCell>

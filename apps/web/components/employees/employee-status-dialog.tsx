@@ -14,25 +14,50 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ApiError } from "@/lib/api";
-import { deleteEmployee } from "@/lib/api/employees";
+import { updateEmployeeStatus } from "@/lib/api/employees";
 
-type DeleteEmployeeDialogProps = {
+type StatusAction = "deactivate" | "reactivate";
+
+type EmployeeStatusDialogProps = {
   open: boolean;
   employee: Employee | null;
+  action: StatusAction;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 };
 
-export function DeleteEmployeeDialog({
+const COPY: Record<
+  StatusAction,
+  { title: string; description: string; confirmLabel: string; pendingLabel: string }
+> = {
+  deactivate: {
+    title: "Deactivate Employee",
+    description:
+      "This employee will be marked inactive. All historical salary slips and invoices are preserved and remain visible; they just won't be selectable for new invoices.",
+    confirmLabel: "Deactivate",
+    pendingLabel: "Deactivating...",
+  },
+  reactivate: {
+    title: "Reactivate Employee",
+    description:
+      "This employee will be marked active again and become selectable for new invoices.",
+    confirmLabel: "Reactivate",
+    pendingLabel: "Reactivating...",
+  },
+};
+
+export function EmployeeStatusDialog({
   open,
   employee,
+  action,
   onOpenChange,
   onSuccess,
-}: DeleteEmployeeDialogProps) {
+}: EmployeeStatusDialogProps) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const copy = COPY[action];
 
-  async function handleDelete() {
+  async function handleConfirm() {
     if (!employee) {
       return;
     }
@@ -41,12 +66,12 @@ export function DeleteEmployeeDialog({
     setSubmitting(true);
 
     try {
-      await deleteEmployee(employee.id);
+      await updateEmployeeStatus(employee.id, action === "reactivate");
       onOpenChange(false);
       onSuccess();
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : "Failed to delete employee.",
+        err instanceof ApiError ? err.message : "Failed to update employee status.",
       );
     } finally {
       setSubmitting(false);
@@ -66,14 +91,12 @@ export function DeleteEmployeeDialog({
       <DialogContent className="sm:max-w-sm" showCloseButton={false}>
         <DialogHeader>
           <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">
-              <AlertTriangle className="size-5 text-destructive" />
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
+              <AlertTriangle className="size-5 text-muted-foreground" />
             </div>
             <div className="space-y-1.5">
-              <DialogTitle>Delete Employee</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete this employee?
-              </DialogDescription>
+              <DialogTitle>{copy.title}</DialogTitle>
+              <DialogDescription>{copy.description}</DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -97,11 +120,11 @@ export function DeleteEmployeeDialog({
           </Button>
           <Button
             type="button"
-            variant="destructive"
-            onClick={handleDelete}
+            variant={action === "deactivate" ? "destructive" : "default"}
+            onClick={handleConfirm}
             disabled={submitting || !employee}
           >
-            {submitting ? "Deleting..." : "Delete"}
+            {submitting ? copy.pendingLabel : copy.confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

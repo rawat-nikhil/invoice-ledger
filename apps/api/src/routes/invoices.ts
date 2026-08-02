@@ -5,6 +5,7 @@ import {
   calculateEmployeeRow,
   calculateInvoiceTotals,
   formatMonthYear,
+  getCalendarDaysInMonth,
 } from "@repo/payroll";
 import type { Employee, Invoice } from "@repo/types";
 import { EmployeeModel } from "../models/employee";
@@ -65,6 +66,17 @@ invoicesRouter.post("/generate", async (req, res) => {
   }
 
   const { invoiceDate, employeeInputs } = parsed.data;
+  const daysInMonth = getCalendarDaysInMonth(invoiceDate);
+  const monthYear = formatMonthYear(invoiceDate);
+
+  for (const input of employeeInputs) {
+    if (input.present > daysInMonth || input.gradeDays > daysInMonth) {
+      return res.status(400).json({
+        error: `Present and grade days cannot exceed ${daysInMonth} for ${monthYear}.`,
+      });
+    }
+  }
+
   const employeeIds = employeeInputs.map((input) => input.employeeId);
 
   if (new Set(employeeIds).size !== employeeIds.length) {
@@ -83,22 +95,33 @@ invoicesRouter.post("/generate", async (req, res) => {
     return res.status(400).json({ error: "One or more employees not found" });
   }
 
+  const inactiveEmployees = employees.filter(
+    (employee) => employee.isActive === false,
+  );
+
+  if (inactiveEmployees.length > 0) {
+    return res.status(400).json({
+      error: "One or more employees are inactive and cannot be added to a new invoice",
+    });
+  }
+
   const employeeMap = new Map(
     employees.map((employee) => [String(employee._id), employee.toJSON() as Employee]),
   );
 
-  const employeeBreakdown = employeeInputs.map((input) => {
-    const employee = employeeMap.get(input.employeeId);
+  const employeeBreakdown = employeeInputs
+    .map((input) => {
+      const employee = employeeMap.get(input.employeeId);
 
-    if (!employee) {
-      throw new Error("Employee not found");
-    }
+      if (!employee) {
+        throw new Error("Employee not found");
+      }
 
-    return calculateEmployeeRow(employee, input, invoiceDate);
-  });
+      return calculateEmployeeRow(employee, input, invoiceDate);
+    })
+    .sort((a, b) => a.employeeCode.localeCompare(b.employeeCode));
 
   const totals = calculateInvoiceTotals(employeeBreakdown);
-  const monthYear = formatMonthYear(invoiceDate);
 
   const session = await mongoose.startSession();
 
@@ -136,6 +159,7 @@ invoicesRouter.post("/generate", async (req, res) => {
         employeeBreakdown.map((row) => ({
           employeeId: row.employeeId,
           invoiceId: invoice._id,
+          monthYear,
           present: row.present,
           otHours: row.otHours,
           gradeDays: row.gradeDays,

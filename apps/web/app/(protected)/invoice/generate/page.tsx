@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Employee } from "@repo/types";
 import {
@@ -19,12 +19,19 @@ import { getEmployees } from "@/lib/api/employees";
 import { downloadInvoice, generateInvoice } from "@/lib/api/invoices";
 import { toIsoDate } from "@/lib/format";
 import {
+  clearGenerateDraft,
+  loadGenerateDraft,
+  mergeEmployeeInputs,
+  saveGenerateDraft,
+  toGenerateDraft,
+  type GenerateStep,
+} from "@/lib/invoices/generate-draft";
+import {
   createEmptyEmployeeInput,
   type EmployeeInputFormRow,
   validateEmployeeInputs,
 } from "@/lib/invoices/generate-validation";
-
-type GenerateStep = 1 | 2 | 3 | 4;
+import { parseEmployeeXlsxFile } from "@/lib/invoices/parse-employee-xlsx";
 
 type GenerateFormData = {
   invoiceDate: Date | undefined;
@@ -32,32 +39,50 @@ type GenerateFormData = {
   employeeInputs: EmployeeInputFormRow[];
 };
 
+function createInitialFormData(): GenerateFormData {
+  const draft = loadGenerateDraft();
+
+  return {
+    invoiceDate: draft?.invoiceDate ? new Date(draft.invoiceDate) : undefined,
+    acknowledged: draft?.acknowledged ?? false,
+    employeeInputs: [],
+  };
+}
+
+function createInitialStep(): GenerateStep {
+  return loadGenerateDraft()?.currentStep ?? 1;
+}
+
 export default function GenerateInvoicePage() {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState<GenerateStep>(1);
-  const [formData, setFormData] = useState<GenerateFormData>({
-    invoiceDate: undefined,
-    acknowledged: false,
-    employeeInputs: [],
-  });
+  const draftRef = useRef(loadGenerateDraft());
+  const [currentStep, setCurrentStep] = useState<GenerateStep>(createInitialStep);
+  const [formData, setFormData] = useState<GenerateFormData>(createInitialFormData);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(true);
+  const [employeesReady, setEmployeesReady] = useState(false);
   const [employeeError, setEmployeeError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
 
   const fetchEmployees = useCallback(async () => {
     setLoadingEmployees(true);
     setEmployeeError(null);
 
     try {
-      const data = await getEmployees({ sort: "name", order: "asc" });
+      const data = await getEmployees({ sort: "employeeCode", order: "asc" });
       setEmployees(data);
       setFormData((prev) => ({
         ...prev,
-        employeeInputs: data.map(createEmptyEmployeeInput),
+        employeeInputs: mergeEmployeeInputs(
+          data,
+          draftRef.current?.employeeInputs,
+        ),
       }));
+      setEmployeesReady(true);
     } catch (err) {
       setEmployeeError(
         err instanceof ApiError ? err.message : "Failed to load employees.",
@@ -70,6 +95,14 @@ export default function GenerateInvoicePage() {
   useEffect(() => {
     void fetchEmployees();
   }, [fetchEmployees]);
+
+  useEffect(() => {
+    if (!employeesReady) {
+      return;
+    }
+
+    saveGenerateDraft(toGenerateDraft(currentStep, formData, toIsoDate));
+  }, [currentStep, formData, employeesReady]);
 
   const employeeMap = useMemo(
     () => new Map(employees.map((employee) => [employee.id, employee])),
@@ -125,6 +158,51 @@ export default function GenerateInvoicePage() {
     }));
   }
 
+  async function handleImportXlsx(file: File) {
+    setImporting(true);
+    setImportMessage(null);
+    setValidationError(null);
+
+    try {
+      const { rows, matchedCount, unmatchedCodes } = await parseEmployeeXlsxFile(
+        file,
+        employees,
+      );
+
+      setFormData((prev) => ({ ...prev, employeeInputs: rows }));
+
+      const messages = [`Imported ${matchedCount} of ${employees.length} employees.`];
+
+      if (unmatchedCodes.length > 0) {
+        messages.push(
+          `${unmatchedCodes.length} code(s) in the sheet did not match any employee: ${unmatchedCodes.join(", ")}.`,
+        );
+      }
+
+      setImportMessage(messages.join(" "));
+    } catch (err) {
+      setImportMessage(
+        err instanceof Error ? err.message : "Failed to import the sheet.",
+      );
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function handleReset() {
+    clearGenerateDraft();
+    draftRef.current = null;
+    setCurrentStep(1);
+    setFormData({
+      invoiceDate: undefined,
+      acknowledged: false,
+      employeeInputs: employees.map(createEmptyEmployeeInput),
+    });
+    setValidationError(null);
+    setSubmitError(null);
+    setImportMessage(null);
+  }
+
   function handleNext() {
     setValidationError(null);
 
@@ -137,7 +215,14 @@ export default function GenerateInvoicePage() {
     }
 
     if (currentStep === 2) {
-      const error = validateEmployeeInputs(formData.employeeInputs);
+      if (!formData.invoiceDate) {
+        return;
+      }
+
+      const error = validateEmployeeInputs(
+        formData.employeeInputs,
+        formData.invoiceDate,
+      );
 
       if (error) {
         setValidationError(error);
@@ -185,6 +270,8 @@ export default function GenerateInvoicePage() {
       });
 
       await downloadInvoice(invoice.id);
+      clearGenerateDraft();
+      draftRef.current = null;
       router.push("/invoice");
     } catch (err) {
       setSubmitError(
@@ -199,14 +286,25 @@ export default function GenerateInvoicePage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Generate Invoice
-        </h1>
-        <p className="text-muted-foreground">
-          Complete all steps to calculate payroll, save records, and export the
-          invoice PDF.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Generate Invoice
+          </h1>
+          <p className="text-muted-foreground">
+            Complete all steps to calculate payroll, save records, and export the
+            invoice PDF. Your progress is saved for this browser tab.
+          </p>
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleReset}
+          disabled={submitting}
+        >
+          Reset form
+        </Button>
       </div>
 
       <GenerateStepIndicator currentStep={currentStep} />
@@ -234,6 +332,9 @@ export default function GenerateInvoicePage() {
           loading={loadingEmployees}
           error={employeeError}
           onRowChange={handleEmployeeFieldChange}
+          onImportFile={(file) => void handleImportXlsx(file)}
+          importing={importing}
+          importMessage={importMessage}
         />
       ) : null}
 

@@ -2,8 +2,8 @@ export function formatInr(amount: number): string {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
-    maximumFractionDigits: 2,
-  }).format(amount);
+    maximumFractionDigits: 0,
+  }).format(Math.round(amount));
 }
 
 export function formatDisplayDate(date: Date): string {

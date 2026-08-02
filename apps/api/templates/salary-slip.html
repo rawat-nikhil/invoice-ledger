@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Salary Slip {{employeeCode}}</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        color: #1a1a1a;
+        padding: 40px;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+      .company-name {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .company-address {
+        color: #666;
+        font-size: 11px;
+        margin-bottom: 16px;
+      }
+      h1 {
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .meta {
+        margin-bottom: 24px;
+      }
+      .meta p {
+        margin-bottom: 4px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+      th,
+      td {
+        padding: 8px 10px;
+        text-align: left;
+        border-bottom: 1px solid #e5e5e5;
+      }
+      th {
+        font-weight: 600;
+        background: #f9f9f9;
+        font-size: 11px;
+      }
+      td {
+        font-size: 11px;
+      }
+      .text-right {
+        text-align: right;
+      }
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-top: 24px;
+        margin-bottom: 8px;
+      }
+      .deduction td {
+        color: #dc2626;
+      }
+      .totals-table th {
+        width: 55%;
+      }
+      .totals-table .highlight td {
+        font-weight: 600;
+        font-size: 13px;
+        border-top: 2px solid #1a1a1a;
+      }
+      .footer {
+        margin-top: 48px;
+        text-align: right;
+      }
+      .footer p {
+        font-size: 11px;
+        color: #666;
+      }
+      .signature-line {
+        margin-top: 48px;
+        border-top: 1px solid #1a1a1a;
+        width: 200px;
+        margin-left: auto;
+        padding-top: 8px;
+        text-align: center;
+        font-size: 11px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <p class="company-name">R.S Engineering Pvt Ltd</p>
+      <p class="company-address">
+        UG-2 Plot No. 35, Naveen Park - 201005
+      </p>
+      <h1>Salary Slip</h1>
+    </div>
+
+    <div class="meta">
+      <p><strong>Employee Code:</strong> {{employeeCode}}</p>
+      <p><strong>Employee Name:</strong> {{employeeName}}</p>
+      <p><strong>Month-Year:</strong> {{monthYear}}</p>
+    </div>
+
+    <p class="section-title">Earnings</p>
+    <table>
+      <tr>
+        <th>Basic Pay</th>
+        <td class="text-right">{{basicAmount}}</td>
+      </tr>
+      <tr>
+        <th>Adjustment Allowance</th>
+        <td class="text-right">{{adjustmentAllowanceAmount}}</td>
+      </tr>
+      <tr>
+        <th>Washing Allowance</th>
+        <td class="text-right">{{washingAllowanceAmount}}</td>
+      </tr>
+      <tr>
+        <th>OT Amount</th>
+        <td class="text-right">{{otAmount}}</td>
+      </tr>
+      <tr>
+        <th>Grade Amount</th>
+        <td class="text-right">{{gradeAmount}}</td>
+      </tr>
+    </table>
+
+    <p class="section-title">Deductions</p>
+    <table class="deduction">
+      <tr>
+        <th>PF</th>
+        <td class="text-right">{{pf}}</td>
+      </tr>
+      <tr>
+        <th>ESI</th>
+        <td class="text-right">{{esi}}</td>
+      </tr>
+    </table>
+
+    <p class="section-title">Total</p>
+    <table class="totals-table">
+      <tr class="highlight">
+        <th>Net Payable</th>
+        <td class="text-right">{{payableAmount}}</td>
+      </tr>
+    </table>
+
+    <div class="footer">
+      <div class="signature-line">Authorized Signatory</div>
+    </div>
+  </body>
+</html>

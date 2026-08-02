@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
-import type { EmployeePayrollBreakdown, Invoice } from "@repo/types";
+import type { Invoice, SalarySlip } from "@repo/types";
 
 function formatInr(amount: number): string {
   return new Intl.NumberFormat("en-IN", {
@@ -21,6 +21,10 @@ function getTemplatePath(): string {
   return join(process.cwd(), "templates", "invoice.html");
 }
 
+function getSalarySlipTemplatePath(): string {
+  return join(process.cwd(), "templates", "salary-slip.html");
+}
+
 function replacePlaceholders(
   template: string,
   replacements: Record<string, string>,
@@ -32,23 +36,18 @@ function replacePlaceholders(
   );
 }
 
-function buildEmployeeRows(breakdown: EmployeePayrollBreakdown[]): string {
-  return breakdown
-    .map(
-      (row) => `<tr>
-        <td>${row.employeeCode}</td>
-        <td>${row.employeeName}</td>
-        <td class="text-right">${row.present}</td>
-        <td class="text-right">${formatInr(row.basicAmount)}</td>
-        <td class="text-right">${formatInr(row.gradeAmount)}</td>
-        <td class="text-right">${formatInr(row.otAmount)}</td>
-        <td class="text-right">${formatInr(row.totalKr)}</td>
-        <td class="text-right">${formatInr(row.pf)}</td>
-        <td class="text-right">${formatInr(row.esi)}</td>
-        <td class="text-right">${formatInr(row.payableAmount)}</td>
-      </tr>`,
-    )
-    .join("\n");
+function formatInvoiceDate(isoDate: string): string {
+  const date = new Date(isoDate);
+
+  if (Number.isNaN(date.getTime())) {
+    return isoDate;
+  }
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function buildLegacyInvoiceHtml(invoice: Invoice): string {
@@ -107,17 +106,18 @@ function buildInvoiceHtml(invoice: Invoice): string {
   }
 
   const template = readFileSync(getTemplatePath(), "utf-8");
-  const { totals } = invoice;
+  const { totals, employeeBreakdown } = invoice;
+  const subtotal = employeeBreakdown.reduce((sum, row) => sum + row.totalKr, 0);
 
   return replacePlaceholders(template, {
     invoiceNumber: invoice.invoiceNumber,
-    monthYear: invoice.monthYear,
-    invoiceDate: invoice.invoiceDate ?? invoice.monthYear,
-    employeeRows: buildEmployeeRows(invoice.employeeBreakdown),
+    invoiceDate: invoice.invoiceDate
+      ? formatInvoiceDate(invoice.invoiceDate)
+      : invoice.monthYear,
+    subtotal: formatInr(subtotal),
     totalPf: formatInr(totals.totalPf),
     totalEsi: formatInr(totals.totalEsi),
     serviceCharge: formatInr(totals.serviceCharge),
-    total: formatInr(totals.total),
     sgst: formatInr(totals.sgst),
     cgst: formatInr(totals.cgst),
     totalPayable: formatInr(totals.totalPayable),
@@ -126,6 +126,33 @@ function buildInvoiceHtml(invoice: Invoice): string {
 
 export async function generateInvoicePDF(invoice: Invoice): Promise<Buffer> {
   const html = buildInvoiceHtml(invoice);
+  return renderPdfFromHtml(html);
+}
+
+function buildSalarySlipHtml(slip: SalarySlip): string {
+  const template = readFileSync(getSalarySlipTemplatePath(), "utf-8");
+
+  return replacePlaceholders(template, {
+    employeeCode: slip.employeeCode,
+    employeeName: slip.employeeName,
+    monthYear: slip.monthYear,
+    basicAmount: formatInr(slip.basicAmount),
+    adjustmentAllowanceAmount: formatInr(slip.adjustmentAllowanceAmount),
+    washingAllowanceAmount: formatInr(slip.washingAllowanceAmount),
+    otAmount: formatInr(slip.otAmount),
+    gradeAmount: formatInr(slip.gradeAmount),
+    pf: formatInr(slip.pf),
+    esi: formatInr(slip.esi),
+    payableAmount: formatInr(slip.payableAmount),
+  });
+}
+
+export async function generateSalarySlipPDF(slip: SalarySlip): Promise<Buffer> {
+  const html = buildSalarySlipHtml(slip);
+  return renderPdfFromHtml(html);
+}
+
+async function renderPdfFromHtml(html: string): Promise<Buffer> {
   const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH;
 
   const browser = await chromium.launch(

@@ -4,18 +4,26 @@ import { useCallback, useEffect, useState } from "react";
 import type { Employee } from "@repo/types";
 import { Plus, Search } from "lucide-react";
 
-import { DeleteEmployeeDialog } from "@/components/employees/delete-employee-dialog";
 import { EmployeeFormDialog } from "@/components/employees/employee-form-dialog";
+import { EmployeeStatusDialog } from "@/components/employees/employee-status-dialog";
 import {
   EmployeeTable,
   type EmployeeSortField,
 } from "@/components/employees/employee-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ApiError } from "@/lib/api";
-import { getEmployees } from "@/lib/api/employees";
+import { getEmployees, type GetEmployeesParams } from "@/lib/api/employees";
 
-type DialogMode = "create" | "edit" | "delete" | null;
+type DialogMode = "create" | "edit" | "status" | null;
+type StatusFilter = NonNullable<GetEmployeesParams["status"]>;
 
 export default function EmployeePage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -25,6 +33,7 @@ export default function EmployeePage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sort, setSort] = useState<EmployeeSortField>("name");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null,
@@ -47,6 +56,7 @@ export default function EmployeePage() {
         search: debouncedSearch || undefined,
         sort,
         order,
+        status: statusFilter,
       });
       setEmployees(data);
     } catch (err) {
@@ -56,7 +66,7 @@ export default function EmployeePage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, sort, order]);
+  }, [debouncedSearch, sort, order, statusFilter]);
 
   useEffect(() => {
     void fetchEmployees();
@@ -82,9 +92,9 @@ export default function EmployeePage() {
     setDialogMode("edit");
   }
 
-  function openDeleteDialog(employee: Employee) {
+  function openStatusDialog(employee: Employee) {
     setSelectedEmployee(employee);
-    setDialogMode("delete");
+    setDialogMode("status");
   }
 
   function closeDialog() {
@@ -102,14 +112,30 @@ export default function EmployeePage() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full max-w-sm">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search by name..."
-            className="pl-8"
-          />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative w-full max-w-sm">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search by name..."
+              className="pl-8"
+            />
+          </div>
+
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value as StatusFilter)}
+          >
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="all">All</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <Button type="button" onClick={openCreateDialog}>
@@ -129,7 +155,7 @@ export default function EmployeePage() {
           order={order}
           onSort={handleSort}
           onEdit={openEditDialog}
-          onDelete={openDeleteDialog}
+          onToggleStatus={openStatusDialog}
         />
       )}
 
@@ -145,9 +171,10 @@ export default function EmployeePage() {
         onSuccess={() => void fetchEmployees()}
       />
 
-      <DeleteEmployeeDialog
-        open={dialogMode === "delete"}
+      <EmployeeStatusDialog
+        open={dialogMode === "status"}
         employee={selectedEmployee}
+        action={selectedEmployee?.isActive ? "deactivate" : "reactivate"}
         onOpenChange={(open) => {
           if (!open) {
             closeDialog();
