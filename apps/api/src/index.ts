@@ -2,7 +2,11 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import { connectDb, disconnectDb, getDbStatus } from "./db/connect";
+import { authMiddleware } from "./middleware/authMiddleware";
 import { authRouter } from "./routes/auth";
+import { employeesRouter } from "./routes/employees";
+import { invoicesRouter } from "./routes/invoices";
+import { salarySlipsRouter } from "./routes/salary-slips";
 
 dotenv.config();
 
@@ -23,6 +27,17 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/auth", authRouter);
+
+app.use((req, res, next) => {
+  if (req.path === "/health" || req.path.startsWith("/auth")) {
+    return next();
+  }
+  return authMiddleware(req, res, next);
+});
+
+app.use("/employees", employeesRouter);
+app.use("/invoices", invoicesRouter);
+app.use("/salary-slips", salarySlipsRouter);
 
 async function start(): Promise<void> {
   await connectDb();

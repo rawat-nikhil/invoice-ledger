@@ -11,6 +11,8 @@ export function getDbStatus(): "connected" | "disconnected" {
 export async function connectDb(): Promise<void> {
   const uri = process.env.MONGO_URI;
 
+  console.log("MONGO_URI RAW =>", JSON.stringify(uri));
+
   if (!uri) {
     throw new Error("MONGO_URI is not set");
   }

@@ -1,0 +1,9 @@
+export const WORKING_DAYS = 26;
+export const HOURS_PER_DAY = 8;
+export const OT_MULTIPLIER = 2;
+export const PF_RATE = 0.12;
+export const EMPLOYER_PF_RATE = 0.13;
+export const EMPLOYER_ESI_RATE = 0.0325;
+export const ESI_RATE = 0.75;
+export const SERVICE_CHARGE_RATE = 0.06;
+export const GST_RATE = 0.09;

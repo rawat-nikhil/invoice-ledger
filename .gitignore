@@ -10,3 +10,6 @@ coverage/
 creds.md
 apps/api/.env
 apps/web/.env.local
+
+bootup.md
+context.md

@@ -1,20 +1,42 @@
 import { Schema, model, models } from "mongoose";
-import type { InvoiceStatus } from "@repo/types";
+import type { ComplianceStatus } from "@repo/types";
 
-const invoiceSchema = new Schema(
+import {
+  employeePayrollBreakdownSchema,
+  invoiceTotalsSchema,
+} from "./payroll-schemas";
+
+const complianceStatusEnum = [
+  "pending",
+  "paid",
+  "not-generated",
+] satisfies ComplianceStatus[];
+
+const complianceSchema = new Schema(
   {
-    invoiceNumber: { type: String, required: true },
-    clientName: { type: String, required: true },
-    amount: { type: Number, required: true },
-    currency: { type: String, required: true, default: "USD" },
+    amount: { type: Number, required: true, default: 0 },
     status: {
       type: String,
       required: true,
-      enum: ["draft", "sent", "paid", "overdue"] satisfies InvoiceStatus[],
-      default: "draft",
+      enum: complianceStatusEnum,
+      default: "not-generated",
     },
-    issuedAt: { type: String, required: true },
-    dueAt: { type: String, required: true },
+  },
+  { _id: false },
+);
+
+const invoiceSchema = new Schema(
+  {
+    invoiceNumber: { type: String, required: true, unique: true },
+    monthYear: { type: String, required: true },
+    totalBill: { type: Number, required: true },
+    serviceCharge: { type: Number, required: true },
+    gst: { type: complianceSchema, required: true },
+    esic: { type: complianceSchema, required: true },
+    settled: { type: Boolean, required: true, default: false },
+    invoiceDate: { type: Date },
+    totals: { type: invoiceTotalsSchema },
+    employeeBreakdown: { type: [employeePayrollBreakdownSchema], default: [] },
   },
   {
     timestamps: true,
@@ -24,6 +46,11 @@ const invoiceSchema = new Schema(
       transform: (_doc, ret: Record<string, unknown>) => {
         ret.id = String(ret._id);
         delete ret._id;
+
+        if (ret.invoiceDate instanceof Date) {
+          ret.invoiceDate = ret.invoiceDate.toISOString().slice(0, 10);
+        }
+
         return ret;
       },
     },
