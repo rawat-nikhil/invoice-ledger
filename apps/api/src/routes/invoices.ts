@@ -95,6 +95,16 @@ invoicesRouter.post("/generate", async (req, res) => {
     return res.status(400).json({ error: "One or more employees not found" });
   }
 
+  const inactiveEmployees = employees.filter(
+    (employee) => employee.isActive === false,
+  );
+
+  if (inactiveEmployees.length > 0) {
+    return res.status(400).json({
+      error: "One or more employees are inactive and cannot be added to a new invoice",
+    });
+  }
+
   const employeeMap = new Map(
     employees.map((employee) => [String(employee._id), employee.toJSON() as Employee]),
   );

@@ -10,6 +10,7 @@ export type GetEmployeesParams = {
   search?: string;
   sort?: string;
   order?: "asc" | "desc";
+  status?: "active" | "inactive" | "all";
 };
 
 export async function getEmployees(
@@ -25,6 +26,9 @@ export async function getEmployees(
   }
   if (params.order) {
     searchParams.set("order", params.order);
+  }
+  if (params.status) {
+    searchParams.set("status", params.status);
   }
 
   const query = searchParams.toString();
@@ -52,8 +56,12 @@ export async function updateEmployee(
   });
 }
 
-export async function deleteEmployee(id: string): Promise<void> {
-  return apiFetch<void>(`/employees/${id}`, {
-    method: "DELETE",
+export async function updateEmployeeStatus(
+  id: string,
+  isActive: boolean,
+): Promise<Employee> {
+  return apiFetch<Employee>(`/employees/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ isActive }),
   });
 }

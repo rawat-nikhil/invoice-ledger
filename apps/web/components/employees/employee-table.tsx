@@ -6,9 +6,11 @@ import {
   ArrowUp,
   ArrowUpDown,
   Pencil,
-  Trash2,
+  UserCheck,
+  UserX,
 } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -37,7 +39,7 @@ type EmployeeTableProps = {
   order: "asc" | "desc";
   onSort: (field: EmployeeSortField) => void;
   onEdit: (employee: Employee) => void;
-  onDelete: (employee: Employee) => void;
+  onToggleStatus: (employee: Employee) => void;
 };
 
 const COLUMNS: { key: EmployeeSortField; label: string }[] = [
@@ -92,7 +94,7 @@ export function EmployeeTable({
   order,
   onSort,
   onEdit,
-  onDelete,
+  onToggleStatus,
 }: EmployeeTableProps) {
   return (
     <div className="rounded-lg border">
@@ -116,6 +118,7 @@ export function EmployeeTable({
                 </button>
               </TableHead>
             ))}
+            <TableHead>Status</TableHead>
             <TableHead className="w-[100px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -123,7 +126,7 @@ export function EmployeeTable({
           {employees.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={COLUMNS.length + 1}
+                colSpan={COLUMNS.length + 2}
                 className="h-24 text-center text-muted-foreground"
               >
                 No employees found.
@@ -143,6 +146,11 @@ export function EmployeeTable({
                 <TableCell>{employee.basicPay}</TableCell>
                 <TableCell>{employee.adjustmentAllowance}</TableCell>
                 <TableCell>{employee.washingAllowance}</TableCell>
+                <TableCell>
+                  <Badge variant={employee.isActive ? "success" : "outline"}>
+                    {employee.isActive ? "Active" : "Inactive"}
+                  </Badge>
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
                     <Button
@@ -158,10 +166,18 @@ export function EmployeeTable({
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      aria-label={`Delete ${employee.name}`}
-                      onClick={() => onDelete(employee)}
+                      aria-label={
+                        employee.isActive
+                          ? `Deactivate ${employee.name}`
+                          : `Reactivate ${employee.name}`
+                      }
+                      onClick={() => onToggleStatus(employee)}
                     >
-                      <Trash2 className="text-destructive" />
+                      {employee.isActive ? (
+                        <UserX className="text-destructive" />
+                      ) : (
+                        <UserCheck className="text-success" />
+                      )}
                     </Button>
                   </div>
                 </TableCell>
