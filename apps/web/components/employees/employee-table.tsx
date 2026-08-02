@@ -118,12 +118,8 @@ export function EmployeeTable({
                 </button>
               </TableHead>
             ))}
-<<<<<<< HEAD
-            <TableHead className="w-25 text-right">Actions</TableHead>
-=======
             <TableHead>Status</TableHead>
-            <TableHead className="w-[100px] text-right">Actions</TableHead>
->>>>>>> cd12d42dd501d3e77e925d292ab1104c84ebac21
+            <TableHead className="w-25 text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
