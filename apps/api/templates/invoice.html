@@ -22,6 +22,7 @@
         break-before: page;
         display: flex;
         flex-direction: column;
+        margin-top: 40px;
         padding: 34px 40px;
         color: oklch(0.22 0.01 250);
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -290,7 +291,7 @@
     </div>
 
     <div class="meta">
-      <p><strong>Invoice number</strong> &nbsp;-&nbsp; {{invoiceNumber}}</p>
+      <p><strong>Invoice number</strong> &nbsp;-&nbsp; {{invoiceNumber}} ({{financialYear}})</p>
       <p><strong>Date</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{invoiceDate}}</p>
       <p><strong>GSTIN</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{businessGstin}}</p>
       <p><strong>PAN number</strong> &nbsp;{{businessPanNumber}}</p>
