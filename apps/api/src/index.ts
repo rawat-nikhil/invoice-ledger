@@ -6,6 +6,7 @@ import { authMiddleware } from "./middleware/authMiddleware";
 import { authRouter } from "./routes/auth";
 import { employeesRouter } from "./routes/employees";
 import { invoicesRouter } from "./routes/invoices";
+import { profileRouter } from "./routes/profile";
 import { salarySlipsRouter } from "./routes/salary-slips";
 
 dotenv.config();
@@ -37,6 +38,7 @@ app.use((req, res, next) => {
 
 app.use("/employees", employeesRouter);
 app.use("/invoices", invoicesRouter);
+app.use("/profile", profileRouter);
 app.use("/salary-slips", salarySlipsRouter);
 
 async function start(): Promise<void> {

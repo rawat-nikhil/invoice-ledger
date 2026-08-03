@@ -6,6 +6,7 @@ import { CalendarIcon } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
@@ -15,20 +16,35 @@ import {
 import { cn } from "@/lib/utils";
 
 type InvoiceMetaStepProps = {
+  invoiceNumber: string;
   invoiceDate: Date | undefined;
   acknowledged: boolean;
+  onInvoiceNumberChange: (invoiceNumber: string) => void;
   onInvoiceDateChange: (date: Date | undefined) => void;
   onAcknowledgedChange: (checked: boolean) => void;
 };
 
 export function InvoiceMetaStep({
+  invoiceNumber,
   invoiceDate,
   acknowledged,
+  onInvoiceNumberChange,
   onInvoiceDateChange,
   onAcknowledgedChange,
 }: InvoiceMetaStepProps) {
   return (
     <div className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="invoice-number">Invoice number</Label>
+        <Input
+          id="invoice-number"
+          value={invoiceNumber}
+          onChange={(event) => onInvoiceNumberChange(event.target.value)}
+          placeholder="e.g. INV-001"
+          className="max-w-sm"
+        />
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="invoice-date">Invoice date</Label>
         <Popover>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Employee } from "@repo/types";
@@ -17,7 +18,9 @@ import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { getEmployees } from "@/lib/api/employees";
 import { downloadInvoice, generateInvoice } from "@/lib/api/invoices";
+import { getBusinessProfile, getClient } from "@/lib/api/profile";
 import { toIsoDate } from "@/lib/format";
+import { isBusinessProfileComplete, isClientComplete } from "@/lib/profile";
 import {
   clearGenerateDraft,
   loadGenerateDraft,
@@ -34,6 +37,7 @@ import {
 import { parseEmployeeXlsxFile } from "@/lib/invoices/parse-employee-xlsx";
 
 type GenerateFormData = {
+  invoiceNumber: string;
   invoiceDate: Date | undefined;
   acknowledged: boolean;
   employeeInputs: EmployeeInputFormRow[];
@@ -43,6 +47,7 @@ function createInitialFormData(): GenerateFormData {
   const draft = loadGenerateDraft();
 
   return {
+    invoiceNumber: draft?.invoiceNumber ?? "",
     invoiceDate: draft?.invoiceDate ? new Date(draft.invoiceDate) : undefined,
     acknowledged: draft?.acknowledged ?? false,
     employeeInputs: [],
@@ -67,6 +72,8 @@ export default function GenerateInvoicePage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [addressesComplete, setAddressesComplete] = useState(true);
+  const [checkingAddresses, setCheckingAddresses] = useState(true);
 
   const fetchEmployees = useCallback(async () => {
     setLoadingEmployees(true);
@@ -95,6 +102,40 @@ export default function GenerateInvoicePage() {
   useEffect(() => {
     void fetchEmployees();
   }, [fetchEmployees]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkAddresses() {
+      setCheckingAddresses(true);
+
+      try {
+        const [business, client] = await Promise.all([
+          getBusinessProfile(),
+          getClient(),
+        ]);
+
+        if (!cancelled) {
+          setAddressesComplete(
+            isBusinessProfileComplete(business) && isClientComplete(client),
+          );
+        }
+      } catch {
+        if (!cancelled) {
+          setAddressesComplete(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setCheckingAddresses(false);
+        }
+      }
+    }
+
+    void checkAddresses();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!employeesReady) {
@@ -136,7 +177,9 @@ export default function GenerateInvoicePage() {
   );
 
   const step1Valid =
-    formData.invoiceDate !== undefined && formData.acknowledged;
+    formData.invoiceNumber.trim() !== "" &&
+    formData.invoiceDate !== undefined &&
+    formData.acknowledged;
 
   function handleEmployeeFieldChange(
     employeeId: string,
@@ -194,6 +237,7 @@ export default function GenerateInvoicePage() {
     draftRef.current = null;
     setCurrentStep(1);
     setFormData({
+      invoiceNumber: "",
       invoiceDate: undefined,
       acknowledged: false,
       employeeInputs: employees.map(createEmptyEmployeeInput),
@@ -257,6 +301,7 @@ export default function GenerateInvoicePage() {
 
     try {
       const invoice = await generateInvoice({
+        invoiceNumber: formData.invoiceNumber.trim(),
         invoiceDate: toIsoDate(formData.invoiceDate),
         employeeInputs: formData.employeeInputs.map(
           ({ employeeId, present, otHours, gradeDays, canteenBill }) => ({
@@ -315,8 +360,12 @@ export default function GenerateInvoicePage() {
 
       {currentStep === 1 ? (
         <InvoiceMetaStep
+          invoiceNumber={formData.invoiceNumber}
           invoiceDate={formData.invoiceDate}
           acknowledged={formData.acknowledged}
+          onInvoiceNumberChange={(invoiceNumber) =>
+            setFormData((prev) => ({ ...prev, invoiceNumber }))
+          }
           onInvoiceDateChange={(date) =>
             setFormData((prev) => ({ ...prev, invoiceDate: date }))
           }
@@ -352,6 +401,16 @@ export default function GenerateInvoicePage() {
         />
       ) : null}
 
+      {currentStep === 4 && !checkingAddresses && !addressesComplete ? (
+        <p className="text-sm text-warning">
+          Business and client addresses are incomplete. Complete your{" "}
+          <Link href="/profile" className="underline">
+            profile
+          </Link>{" "}
+          before generating an invoice.
+        </p>
+      ) : null}
+
       <div className="flex items-center justify-between border-t pt-4">
         <Button
           type="button"
@@ -377,7 +436,7 @@ export default function GenerateInvoicePage() {
           <Button
             type="button"
             onClick={() => void handleConfirm()}
-            disabled={submitting}
+            disabled={submitting || checkingAddresses || !addressesComplete}
           >
             Confirm & Generate
           </Button>

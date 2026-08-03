@@ -10,29 +10,25 @@ export async function getSalarySlips(monthYear: string): Promise<SalarySlip[]> {
   return apiFetch<SalarySlip[]>(`/salary-slips?${params.toString()}`);
 }
 
-function parseFilename(contentDisposition: string | null): string {
+function parseFilename(
+  contentDisposition: string | null,
+  fallback: string,
+): string {
   if (!contentDisposition) {
-    return "salary-slip.pdf";
+    return fallback;
   }
 
   const match = contentDisposition.match(/filename="?([^";\n]+)"?/i);
-  return match?.[1] ?? "salary-slip.pdf";
+  return match?.[1] ?? fallback;
 }
 
-export async function downloadSalarySlip(id: string): Promise<void> {
-  const token = getToken();
-  const headers = new Headers();
-
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
-  const response = await fetch(`${API_BASE_URL}/salary-slips/${id}/download`, {
-    headers,
-  });
-
+async function downloadBlobResponse(
+  response: Response,
+  fallbackFilename: string,
+  defaultErrorMessage: string,
+): Promise<void> {
   if (!response.ok) {
-    let message = "Failed to download salary slip";
+    let message = defaultErrorMessage;
 
     try {
       const errorBody = (await response.json()) as { error?: string };
@@ -47,7 +43,10 @@ export async function downloadSalarySlip(id: string): Promise<void> {
   }
 
   const blob = await response.blob();
-  const filename = parseFilename(response.headers.get("Content-Disposition"));
+  const filename = parseFilename(
+    response.headers.get("Content-Disposition"),
+    fallbackFilename,
+  );
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -56,4 +55,40 @@ export async function downloadSalarySlip(id: string): Promise<void> {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+export async function downloadSalarySlip(id: string): Promise<void> {
+  const token = getToken();
+  const headers = new Headers();
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/salary-slips/${id}/download`, {
+    headers,
+  });
+
+  await downloadBlobResponse(response, "salary-slip.pdf", "Failed to download salary slip");
+}
+
+export async function downloadSalarySlipsZip(monthYear: string): Promise<void> {
+  const token = getToken();
+  const headers = new Headers();
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  const params = new URLSearchParams({ monthYear });
+  const response = await fetch(
+    `${API_BASE_URL}/salary-slips/download?${params.toString()}`,
+    { headers },
+  );
+
+  await downloadBlobResponse(
+    response,
+    "salary-slips.zip",
+    "Failed to download salary slips",
+  );
 }
