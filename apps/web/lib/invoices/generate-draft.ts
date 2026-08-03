@@ -19,6 +19,7 @@ export type SavedEmployeeInput = {
 
 export type GenerateDraft = {
   currentStep: GenerateStep;
+  invoiceNumber: string;
   invoiceDate: string | null;
   acknowledged: boolean;
   employeeInputs: SavedEmployeeInput[];
@@ -71,6 +72,13 @@ export function loadGenerateDraft(): GenerateDraft | null {
     }
 
     if (
+      parsed.invoiceNumber !== undefined &&
+      typeof parsed.invoiceNumber !== "string"
+    ) {
+      return null;
+    }
+
+    if (
       parsed.invoiceDate !== null &&
       parsed.invoiceDate !== undefined &&
       typeof parsed.invoiceDate !== "string"
@@ -88,6 +96,7 @@ export function loadGenerateDraft(): GenerateDraft | null {
 
     return {
       currentStep: parsed.currentStep,
+      invoiceNumber: parsed.invoiceNumber ?? "",
       invoiceDate: parsed.invoiceDate ?? null,
       acknowledged: parsed.acknowledged,
       employeeInputs: parsed.employeeInputs,
@@ -140,6 +149,7 @@ export function mergeEmployeeInputs(
 export function toGenerateDraft(
   currentStep: GenerateStep,
   formData: {
+    invoiceNumber: string;
     invoiceDate: Date | undefined;
     acknowledged: boolean;
     employeeInputs: EmployeeInputFormRow[];
@@ -148,6 +158,7 @@ export function toGenerateDraft(
 ): GenerateDraft {
   return {
     currentStep,
+    invoiceNumber: formData.invoiceNumber,
     invoiceDate: formData.invoiceDate ? isoDate(formData.invoiceDate) : null,
     acknowledged: formData.acknowledged,
     employeeInputs: formData.employeeInputs.map(

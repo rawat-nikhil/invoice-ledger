@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { chromium } from "playwright";
-import type { Invoice, SalarySlip } from "@repo/types";
+import { chromium, type Browser } from "playwright";
+import type { BusinessProfile, Client, Invoice, SalarySlip } from "@repo/types";
 
 function formatInr(amount: number): string {
   return new Intl.NumberFormat("en-IN", {
@@ -100,7 +100,11 @@ function buildLegacyInvoiceHtml(invoice: Invoice): string {
 </html>`;
 }
 
-function buildInvoiceHtml(invoice: Invoice): string {
+function buildInvoiceHtml(
+  invoice: Invoice,
+  business: BusinessProfile,
+  client: Client,
+): string {
   if (!invoice.totals || !invoice.employeeBreakdown?.length) {
     return buildLegacyInvoiceHtml(invoice);
   }
@@ -121,15 +125,34 @@ function buildInvoiceHtml(invoice: Invoice): string {
     sgst: formatInr(totals.sgst),
     cgst: formatInr(totals.cgst),
     totalPayable: formatInr(totals.totalPayable),
+    businessName: business.name,
+    businessGstin: business.gstin,
+    businessLine1: business.line1,
+    businessLine2: business.line2,
+    businessCityStateCountry: `${business.city}, ${business.state}, ${business.country}`,
+    businessPincode: business.pincode,
+    businessEmail: business.email,
+    businessPhone: business.phone,
+    businessHsnCode: business.hsnCode,
+    businessPanNumber: business.panNumber,
+    clientName: client.name,
+    clientGstin: client.gstin,
+    clientLine1: client.line1,
+    clientLine2: client.line2,
+    clientCityStatePincode: `${client.city}, ${client.state}, ${client.pincode}`,
   });
 }
 
-export async function generateInvoicePDF(invoice: Invoice): Promise<Buffer> {
-  const html = buildInvoiceHtml(invoice);
+export async function generateInvoicePDF(
+  invoice: Invoice,
+  business: BusinessProfile,
+  client: Client,
+): Promise<Buffer> {
+  const html = buildInvoiceHtml(invoice, business, client);
   return renderPdfFromHtml(html);
 }
 
-function buildSalarySlipHtml(slip: SalarySlip): string {
+function buildSalarySlipHtml(slip: SalarySlip, business: BusinessProfile): string {
   const template = readFileSync(getSalarySlipTemplatePath(), "utf-8");
 
   return replacePlaceholders(template, {
@@ -144,12 +167,71 @@ function buildSalarySlipHtml(slip: SalarySlip): string {
     pf: formatInr(slip.pf),
     esi: formatInr(slip.esi),
     payableAmount: formatInr(slip.payableAmount),
+    businessName: business.name,
+    businessGstin: business.gstin,
+    businessPanNumber: business.panNumber,
+    businessHsnCode: business.hsnCode,
+    businessEmail: business.email,
+    businessPhone: business.phone,
+    businessLine1: business.line1,
+    businessLine2: business.line2,
+    businessCityStatePincode: `${business.city}, ${business.state} - ${business.pincode}`,
   });
 }
 
-export async function generateSalarySlipPDF(slip: SalarySlip): Promise<Buffer> {
-  const html = buildSalarySlipHtml(slip);
+function getSalarySlipFilename(slip: SalarySlip): string {
+  return `salary-slip-${slip.employeeCode}-${slip.monthYear}.pdf`;
+}
+
+export async function generateSalarySlipPDF(
+  slip: SalarySlip,
+  business: BusinessProfile,
+): Promise<Buffer> {
+  const html = buildSalarySlipHtml(slip, business);
   return renderPdfFromHtml(html);
+}
+
+export async function generateSalarySlipPDFs(
+  slips: SalarySlip[],
+  business: BusinessProfile,
+): Promise<{ filename: string; buffer: Buffer }[]> {
+  const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH;
+
+  const browser = await chromium.launch(
+    executablePath ? { executablePath } : undefined,
+  );
+
+  try {
+    const results: { filename: string; buffer: Buffer }[] = [];
+
+    for (const slip of slips) {
+      const html = buildSalarySlipHtml(slip, business);
+      const buffer = await renderPdfFromHtmlWithBrowser(browser, html);
+      results.push({
+        filename: getSalarySlipFilename(slip),
+        buffer,
+      });
+    }
+
+    return results;
+  } finally {
+    await browser.close();
+  }
+}
+
+async function renderPdfFromHtmlWithBrowser(
+  browser: Browser,
+  html: string,
+): Promise<Buffer> {
+  const page = await browser.newPage();
+
+  try {
+    await page.setContent(html, { waitUntil: "domcontentloaded" });
+    const pdf = await page.pdf({ format: "A4", printBackground: true });
+    return Buffer.from(pdf);
+  } finally {
+    await page.close();
+  }
 }
 
 async function renderPdfFromHtml(html: string): Promise<Buffer> {
@@ -160,10 +242,7 @@ async function renderPdfFromHtml(html: string): Promise<Buffer> {
   );
 
   try {
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "domcontentloaded" });
-    const pdf = await page.pdf({ format: "A4", printBackground: true });
-    return Buffer.from(pdf);
+    return await renderPdfFromHtmlWithBrowser(browser, html);
   } finally {
     await browser.close();
   }
