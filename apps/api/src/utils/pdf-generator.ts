@@ -188,6 +188,42 @@ function formatInvoiceDate(isoDate: string): string {
   });
 }
 
+function getIndianFinancialYear(month: number, year: number): string {
+  const startYear = month >= 4 ? year : year - 1;
+  return `${startYear}-${startYear + 1}`;
+}
+
+function getIndianFinancialYearFromIsoDate(isoDate: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(isoDate);
+  if (match) {
+    return getIndianFinancialYear(Number(match[2]), Number(match[1]));
+  }
+
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return getIndianFinancialYear(date.getMonth() + 1, date.getFullYear());
+}
+
+function getIndianFinancialYearFromMonthYear(monthYear: string): string {
+  const date = new Date(`1 ${monthYear.replace("-", " ")}`);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return getIndianFinancialYear(date.getMonth() + 1, date.getFullYear());
+}
+
+function resolveInvoiceFinancialYear(invoice: Invoice): string {
+  if (invoice.invoiceDate) {
+    return getIndianFinancialYearFromIsoDate(invoice.invoiceDate);
+  }
+
+  return getIndianFinancialYearFromMonthYear(invoice.monthYear);
+}
+
 function buildLegacyInvoiceHtml(invoice: Invoice): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -254,6 +290,7 @@ function buildInvoiceHtml(
 
   return replacePlaceholders(template, {
     invoiceNumber: invoice.invoiceNumber,
+    financialYear: resolveInvoiceFinancialYear(invoice),
     invoiceDate: invoice.invoiceDate
       ? formatInvoiceDate(invoice.invoiceDate)
       : invoice.monthYear,
