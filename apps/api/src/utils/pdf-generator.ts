@@ -1,13 +1,137 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium, type Browser } from "playwright";
-import type { BusinessProfile, Client, Invoice, SalarySlip } from "@repo/types";
+import type {
+  BusinessProfile,
+  Client,
+  EmployeePayrollBreakdown,
+  Invoice,
+  InvoiceTotals,
+  SalarySlip,
+} from "@repo/types";
 
 function formatInr(amount: number): string {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
   }).format(amount);
+}
+
+function rowBg(index: number): string {
+  return index % 2 === 0 ? "white" : "oklch(0.98 0.003 250)";
+}
+
+function buildEmployeeAttendanceRows(
+  employeeBreakdown: EmployeePayrollBreakdown[],
+): string {
+  const rows = employeeBreakdown
+    .map(
+      (row, index) => `<tr style="background:${rowBg(index)};">
+        <td>${index + 1}</td>
+        <td>${row.employeeCode}</td>
+        <td>${row.employeeName}</td>
+        <td>${row.present}</td>
+        <td>${row.otHours}</td>
+        <td>${row.gradeDays}</td>
+        <td>${row.gradeRate}</td>
+        <td>${formatInr(row.basicAmount)}</td>
+        <td>${formatInr(row.washingAllowanceAmount)}</td>
+        <td>${formatInr(row.adjustmentAllowanceAmount)}</td>
+      </tr>`,
+    )
+    .join("");
+
+  const sum = (key: keyof EmployeePayrollBreakdown) =>
+    employeeBreakdown.reduce((total, row) => total + Number(row[key]), 0);
+
+  const totalRow = `<tr class="pr-total-row">
+    <td colspan="3">TOTAL</td>
+    <td>${sum("present")}</td>
+    <td>${sum("otHours")}</td>
+    <td>${sum("gradeDays")}</td>
+    <td>${sum("gradeRate")}</td>
+    <td>${formatInr(sum("basicAmount"))}</td>
+    <td>${formatInr(sum("washingAllowanceAmount"))}</td>
+    <td>${formatInr(sum("adjustmentAllowanceAmount"))}</td>
+  </tr>`;
+
+  return rows + totalRow;
+}
+
+function buildBillingDetailRows(
+  employeeBreakdown: EmployeePayrollBreakdown[],
+): string {
+  const rows = employeeBreakdown
+    .map(
+      (row, index) => `<tr style="background:${rowBg(index)};">
+        <td style="text-align:left;">${row.employeeName}</td>
+        <td>${formatInr(row.basicAmount)}</td>
+        <td>${formatInr(row.washingAllowanceAmount)}</td>
+        <td>${formatInr(row.adjustmentAllowanceAmount)}</td>
+        <td>${formatInr(row.gradeAmount)}</td>
+        <td>${formatInr(row.otAmount)}</td>
+        <td>${formatInr(row.totalKr)}</td>
+        <td>${formatInr(row.pf)}</td>
+        <td>${formatInr(row.esi)}</td>
+        <td>${formatInr(row.canteenBill)}</td>
+        <td style="font-weight:600;">${formatInr(row.payableAmount)}</td>
+      </tr>`,
+    )
+    .join("");
+
+  const sum = (key: keyof EmployeePayrollBreakdown) =>
+    employeeBreakdown.reduce((total, row) => total + Number(row[key]), 0);
+
+  const totalRow = `<tr class="pr-total-row">
+    <td style="text-align:left;">TOTAL</td>
+    <td>${formatInr(sum("basicAmount"))}</td>
+    <td>${formatInr(sum("washingAllowanceAmount"))}</td>
+    <td>${formatInr(sum("adjustmentAllowanceAmount"))}</td>
+    <td>${formatInr(sum("gradeAmount"))}</td>
+    <td>${formatInr(sum("otAmount"))}</td>
+    <td>${formatInr(sum("totalKr"))}</td>
+    <td>${formatInr(sum("pf"))}</td>
+    <td>${formatInr(sum("esi"))}</td>
+    <td>${formatInr(sum("canteenBill"))}</td>
+    <td>${formatInr(sum("payableAmount"))}</td>
+  </tr>`;
+
+  return rows + totalRow;
+}
+
+function buildFinalBillRows(totals: InvoiceTotals, subtotal: number): string {
+  const rows: { label: string; amount: string; bold?: boolean; shaded?: boolean }[] = [
+    { label: "Base billing amount (wages, allowances, OT)", amount: formatInr(subtotal) },
+    { label: "PF", amount: formatInr(totals.totalPf) },
+    { label: "ESI", amount: formatInr(totals.totalEsi) },
+    { label: "Service charge", amount: formatInr(totals.serviceCharge) },
+    { label: "Subtotal", amount: formatInr(totals.total), bold: true, shaded: true },
+    { label: "CGST", amount: formatInr(totals.cgst) },
+    { label: "SGST", amount: formatInr(totals.sgst) },
+    {
+      label: "Grand Total",
+      amount: formatInr(totals.totalPayable),
+      bold: true,
+      shaded: true,
+    },
+  ];
+
+  return rows
+    .map((row, index) => {
+      const isLast = index === rows.length - 1;
+      const borderTop = index === 0 ? "none" : "1px solid oklch(0.92 0.005 250)";
+      const style = [
+        `background:${row.shaded ? "oklch(0.97 0.008 250)" : "white"}`,
+        `font-weight:${row.bold ? 700 : 400}`,
+        `border-top:${isLast ? "2px solid oklch(0.55 0.15 250)" : borderTop}`,
+      ].join(";");
+
+      return `<div class="pr-final-row" style="${style};">
+        <span>${row.label}</span>
+        <span>${row.amount}</span>
+      </div>`;
+    })
+    .join("");
 }
 
 function formatStatus(status: string): string {
@@ -58,6 +182,7 @@ function buildLegacyInvoiceHtml(invoice: Invoice): string {
   <title>Invoice ${invoice.invoiceNumber}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    @page { size: A4; margin: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: #1a1a1a;
@@ -118,6 +243,11 @@ function buildInvoiceHtml(
     invoiceDate: invoice.invoiceDate
       ? formatInvoiceDate(invoice.invoiceDate)
       : invoice.monthYear,
+    monthYear: invoice.monthYear,
+    employeeCount: String(employeeBreakdown.length),
+    employeeAttendanceRows: buildEmployeeAttendanceRows(employeeBreakdown),
+    billingDetailRows: buildBillingDetailRows(employeeBreakdown),
+    finalBillRows: buildFinalBillRows(totals, subtotal),
     subtotal: formatInr(subtotal),
     totalPf: formatInr(totals.totalPf),
     totalEsi: formatInr(totals.totalEsi),
@@ -227,7 +357,11 @@ async function renderPdfFromHtmlWithBrowser(
 
   try {
     await page.setContent(html, { waitUntil: "domcontentloaded" });
-    const pdf = await page.pdf({ format: "A4", printBackground: true });
+    const pdf = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      preferCSSPageSize: true,
+    });
     return Buffer.from(pdf);
   } finally {
     await page.close();
