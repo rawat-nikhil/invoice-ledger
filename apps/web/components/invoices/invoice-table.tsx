@@ -79,7 +79,7 @@ export function InvoiceTable({
             <TableHead>GST</TableHead>
             <TableHead>ESIC</TableHead>
             <TableHead>Settled</TableHead>
-            <TableHead className="w-[100px] text-right">Actions</TableHead>
+            <TableHead className="w-25 text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
