@@ -94,19 +94,14 @@ export function Sidebar() {
           {isExpanded ? (
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold tracking-tight">
-                Invoice Ledger
+                R.S Engineering
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                R.S Engineering
+                Invoice Ledger
               </p>
             </div>
           ) : null}
         </div>
-        {isExpanded ? (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Internal dashboard
-          </p>
-        ) : null}
       </div>
 
       <nav
@@ -115,7 +110,8 @@ export function Sidebar() {
           isCollapsedDesktop && "items-center px-2",
         )}
       >
-        {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+        {NAV_ITEMS.map((item) => {
+          const { label, href, icon: Icon } = item;
           const active = isActiveRoute(pathname, href);
 
           return (
@@ -149,7 +145,14 @@ export function Sidebar() {
       >
         {isExpanded ? (
           <p className="px-3 text-xs text-muted-foreground">
-            v1.0 · Internal use
+            Last updated{" "}
+            <span className="font-bold">
+              {new Date().toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
           </p>
         ) : null}
       </div>

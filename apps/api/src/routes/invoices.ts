@@ -7,12 +7,17 @@ import {
   formatMonthYear,
   getCalendarDaysInMonth,
 } from "@repo/payroll";
-import type { Employee, Invoice } from "@repo/types";
+import type { BusinessProfile, Client, Employee, Invoice } from "@repo/types";
+import { BusinessProfileModel } from "../models/business-profile";
+import { ClientModel } from "../models/client";
 import { EmployeeModel } from "../models/employee";
 import { InvoiceModel } from "../models/invoice";
 import { SalarySlipModel } from "../models/salary-slip";
-import { getNextInvoiceNumber } from "../utils/invoice-number";
 import { generateInvoicePDF } from "../utils/pdf-generator";
+import {
+  isBusinessProfileComplete,
+  isClientComplete,
+} from "../utils/profile-completeness";
 
 const complianceSchema = z.object({
   amount: z.number(),
@@ -47,6 +52,7 @@ const employeeInvoiceInputSchema = z.object({
 });
 
 const generateInvoiceSchema = z.object({
+  invoiceNumber: z.string().min(1),
   invoiceDate: z.string().min(1),
   employeeInputs: z.array(employeeInvoiceInputSchema).min(1),
 });
@@ -65,7 +71,7 @@ invoicesRouter.post("/generate", async (req, res) => {
     return res.status(400).json({ error: "Invalid request body" });
   }
 
-  const { invoiceDate, employeeInputs } = parsed.data;
+  const { invoiceNumber, invoiceDate, employeeInputs } = parsed.data;
   const daysInMonth = getCalendarDaysInMonth(invoiceDate);
   const monthYear = formatMonthYear(invoiceDate);
 
@@ -129,8 +135,6 @@ invoicesRouter.post("/generate", async (req, res) => {
     let createdInvoice: Invoice | null = null;
 
     await session.withTransaction(async () => {
-      const invoiceNumber = await getNextInvoiceNumber(session);
-
       const [invoice] = await InvoiceModel.create(
         [
           {
@@ -241,8 +245,33 @@ invoicesRouter.get("/:id/download", async (req, res) => {
     return res.status(404).json({ error: "Invoice not found" });
   }
 
+  const [business, client] = await Promise.all([
+    BusinessProfileModel.findOneAndUpdate(
+      {},
+      {},
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    ),
+    ClientModel.findOneAndUpdate(
+      {},
+      {},
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    ),
+  ]);
+  const businessData = business.toJSON() as BusinessProfile;
+  const clientData = client.toJSON() as Client;
+
+  if (
+    !isBusinessProfileComplete(businessData) ||
+    !isClientComplete(clientData)
+  ) {
+    return res.status(400).json({
+      error:
+        "Business and client address must be set in Profile before downloading invoices.",
+    });
+  }
+
   const invoiceData = invoice.toJSON() as Invoice;
-  const pdfBuffer = await generateInvoicePDF(invoiceData);
+  const pdfBuffer = await generateInvoicePDF(invoiceData, businessData, clientData);
 
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(

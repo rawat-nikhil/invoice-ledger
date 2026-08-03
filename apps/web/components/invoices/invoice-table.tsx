@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 type InvoiceTableProps = {
   invoices: Invoice[];
   downloadingId: string | null;
+  downloadDisabled?: boolean;
   onEdit: (invoice: Invoice) => void;
   onDownload: (invoice: Invoice) => void;
 };
@@ -62,6 +63,7 @@ function SettledIndicator({ settled }: { settled: boolean }) {
 export function InvoiceTable({
   invoices,
   downloadingId,
+  downloadDisabled = false,
   onEdit,
   onDownload,
 }: InvoiceTableProps) {
@@ -77,7 +79,7 @@ export function InvoiceTable({
             <TableHead>GST</TableHead>
             <TableHead>ESIC</TableHead>
             <TableHead>Settled</TableHead>
-            <TableHead className="w-[100px] text-right">Actions</TableHead>
+            <TableHead className="w-25 text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -130,7 +132,12 @@ export function InvoiceTable({
                       variant="ghost"
                       size="icon-sm"
                       aria-label={`Download invoice ${invoice.invoiceNumber}`}
-                      disabled={downloadingId === invoice.id}
+                      title={
+                        downloadDisabled
+                          ? "Complete business and client addresses in Profile to download invoices"
+                          : undefined
+                      }
+                      disabled={downloadDisabled || downloadingId === invoice.id}
                       onClick={() => onDownload(invoice)}
                     >
                       <Download />

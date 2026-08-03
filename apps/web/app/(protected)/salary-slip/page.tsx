@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { SalarySlip } from "@repo/types";
 import { formatMonthYear } from "@repo/payroll";
+import { Download } from "lucide-react";
 
 import { SalarySlipTable } from "@/components/salary-slips/salary-slip-table";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -16,6 +18,7 @@ import {
 import { ApiError } from "@/lib/api";
 import {
   downloadSalarySlip,
+  downloadSalarySlipsZip,
   getSalarySlips,
 } from "@/lib/api/salary-slips";
 import { toIsoDate } from "@/lib/format";
@@ -48,6 +51,7 @@ export default function SalarySlipPage() {
   const [error, setError] = useState<string | null>(null);
   const [hasFetched, setHasFetched] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [bulkDownloading, setBulkDownloading] = useState(false);
 
   const monthYear = useMemo(() => {
     if (!month || !year) {
@@ -108,7 +112,33 @@ export default function SalarySlipPage() {
     }
   }
 
+  async function handleBulkDownload() {
+    if (!monthYear) {
+      return;
+    }
+
+    setBulkDownloading(true);
+    setError(null);
+
+    try {
+      await downloadSalarySlipsZip(monthYear);
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Failed to download salary slips.",
+      );
+    } finally {
+      setBulkDownloading(false);
+    }
+  }
+
   const showTable = Boolean(monthYear);
+  const canBulkDownload =
+    Boolean(monthYear) &&
+    !loading &&
+    !(hasFetched && slips.length === 0) &&
+    !bulkDownloading;
 
   return (
     <div className="space-y-6">
@@ -119,44 +149,56 @@ export default function SalarySlipPage() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-        <div className="space-y-2">
-          <Label htmlFor="salary-slip-month">Month</Label>
-          <Select
-            value={month}
-            onValueChange={(value) => setMonth(value ?? "")}
-          >
-            <SelectTrigger id="salary-slip-month" className="w-full sm:w-40">
-              <SelectValue placeholder="Select month" />
-            </SelectTrigger>
-            <SelectContent>
-              {MONTHS.map(({ value, label }) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+          <div className="space-y-2">
+            <Label htmlFor="salary-slip-month">Month</Label>
+            <Select
+              value={month}
+              onValueChange={(value) => setMonth(value ?? "")}
+              items={MONTHS}
+            >
+              <SelectTrigger id="salary-slip-month" className="w-full sm:w-40">
+                <SelectValue placeholder="Select month" />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTHS.map(({ value, label }) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="salary-slip-year">Year</Label>
+            <Select
+              value={year}
+              onValueChange={(value) => setYear(value ?? "")}
+            >
+              <SelectTrigger id="salary-slip-year" className="w-full sm:w-32">
+                <SelectValue placeholder="Select year" />
+              </SelectTrigger>
+              <SelectContent>
+                {YEAR_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="salary-slip-year">Year</Label>
-          <Select
-            value={year}
-            onValueChange={(value) => setYear(value ?? "")}
-          >
-            <SelectTrigger id="salary-slip-year" className="w-full sm:w-32">
-              <SelectValue placeholder="Select year" />
-            </SelectTrigger>
-            <SelectContent>
-              {YEAR_OPTIONS.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Button
+          type="button"
+          disabled={!canBulkDownload}
+          onClick={() => void handleBulkDownload()}
+        >
+          <Download />
+          {bulkDownloading ? "Downloading..." : "Download All"}
+        </Button>
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}

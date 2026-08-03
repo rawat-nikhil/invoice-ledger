@@ -25,13 +25,19 @@ import { getEmployees, type GetEmployeesParams } from "@/lib/api/employees";
 type DialogMode = "create" | "edit" | "status" | null;
 type StatusFilter = NonNullable<GetEmployeesParams["status"]>;
 
+const STATUS_FILTER_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+  { value: "all", label: "All" },
+] as const satisfies readonly { value: StatusFilter; label: string }[];
+
 export default function EmployeePage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [sort, setSort] = useState<EmployeeSortField>("name");
+  const [sort, setSort] = useState<EmployeeSortField>("employeeCode");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
@@ -126,14 +132,17 @@ export default function EmployeePage() {
           <Select
             value={statusFilter}
             onValueChange={(value) => setStatusFilter(value as StatusFilter)}
+            items={STATUS_FILTER_OPTIONS}
           >
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-35">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="all">All</SelectItem>
+              {STATUS_FILTER_OPTIONS.map(({ value, label }) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

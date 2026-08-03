@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { LogOut, Menu, User, X } from "lucide-react";
 
-import { BrandLogo } from "@/components/atoms";
+import { BrandLogo, BrandHeader } from "@/components/atoms";
 import { useSidebar } from "@/components/layout/sidebar-context";
 import {
   DropdownMenu,
@@ -34,13 +34,13 @@ export function Header() {
         {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
       </button>
 
-      <h1 className="flex-1 uppercase truncate text-center text-base font-semibold tracking-tight md:absolute md:left-1/2 md:flex-none md:-translate-x-1/2 md:text-xl">
-        R.S Engineering
-      </h1>
+      <div className="flex flex-1 items-center justify-center md:absolute md:left-1/2 md:flex-none md:-translate-x-1/2">
+        <BrandHeader />
+      </div>
 
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex size-9 shrink-0 items-center justify-center rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-          <BrandLogo shape="circle" size="sm" className="cursor-pointer" />
+        <DropdownMenuTrigger className="flex size-10 shrink-0 items-center justify-center rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+          <BrandLogo shape="circle" size="md" className="cursor-pointer" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-44 flex flex-col gap-2">
           <DropdownMenuItem onClick={() => router.push("/profile")}>

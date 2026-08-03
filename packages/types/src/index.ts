@@ -70,6 +70,7 @@ export interface CreateInvoiceInput {
 export type UpdateInvoiceInput = Omit<CreateInvoiceInput, "invoiceNumber">;
 
 export interface GenerateInvoiceInput {
+  invoiceNumber: string;
   invoiceDate: string;
   employeeInputs: EmployeeInvoiceInput[];
 }
@@ -152,3 +153,41 @@ export type UpdateEmployeeInput = Omit<CreateEmployeeInput, "employeeCode">;
 export interface UpdateEmployeeStatusInput {
   isActive: boolean;
 }
+
+export interface BusinessProfile {
+  id: string;
+  name: string;
+  gstin: string;
+  line1: string;
+  line2: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country: string;
+  email: string;
+  phone: string;
+  hsnCode: string;
+  panNumber: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type UpdateBusinessProfileInput = Omit<
+  BusinessProfile,
+  "id" | "createdAt" | "updatedAt"
+>;
+
+export interface Client {
+  id: string;
+  name: string;
+  line1: string;
+  line2: string;
+  city: string;
+  state: string;
+  pincode: string;
+  gstin: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type UpdateClientInput = Omit<Client, "id" | "createdAt" | "updatedAt">;

@@ -10,6 +10,8 @@ import { InvoiceTable } from "@/components/invoices/invoice-table";
 import { buttonVariants } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { downloadInvoice, getInvoices } from "@/lib/api/invoices";
+import { getBusinessProfile, getClient } from "@/lib/api/profile";
+import { isBusinessProfileComplete, isClientComplete } from "@/lib/profile";
 import { cn } from "@/lib/utils";
 
 type DialogMode = "edit" | null;
@@ -22,14 +24,22 @@ export default function InvoicePage() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [addressesComplete, setAddressesComplete] = useState(true);
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const data = await getInvoices();
+      const [data, business, client] = await Promise.all([
+        getInvoices(),
+        getBusinessProfile(),
+        getClient(),
+      ]);
       setInvoices(data);
+      setAddressesComplete(
+        isBusinessProfileComplete(business) && isClientComplete(client),
+      );
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Failed to load invoices.",
@@ -70,11 +80,13 @@ export default function InvoicePage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Invoice</h1>
-        <p className="text-muted-foreground">
-          Manage monthly invoices, compliance status, and PDF exports.
-        </p>
+      <div className="flex items-start gap-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Invoice</h1>
+          <p className="text-muted-foreground">
+            Manage monthly invoices, compliance status, and PDF exports.
+          </p>
+        </div>
       </div>
 
       <div className="flex justify-end">
@@ -91,6 +103,15 @@ export default function InvoicePage() {
       {downloadError ? (
         <p className="text-sm text-destructive">{downloadError}</p>
       ) : null}
+      {!loading && !addressesComplete ? (
+        <p className="text-sm text-warning">
+          Business and client addresses are incomplete.{" "}
+          <Link href="/profile" className="underline">
+            Complete your profile
+          </Link>{" "}
+          to enable invoice downloads.
+        </p>
+      ) : null}
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading invoices...</p>
@@ -98,6 +119,7 @@ export default function InvoicePage() {
         <InvoiceTable
           invoices={invoices}
           downloadingId={downloadingId}
+          downloadDisabled={!addressesComplete}
           onEdit={openEditDialog}
           onDownload={(invoice) => void handleDownload(invoice)}
         />

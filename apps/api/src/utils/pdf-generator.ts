@@ -1,13 +1,151 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { chromium } from "playwright";
-import type { Invoice, SalarySlip } from "@repo/types";
+import { chromium, type Browser } from "playwright";
+import type {
+  BusinessProfile,
+  Client,
+  EmployeePayrollBreakdown,
+  Invoice,
+  InvoiceTotals,
+  SalarySlip,
+} from "@repo/types";
 
 function formatInr(amount: number): string {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
   }).format(amount);
+}
+
+function rowBg(index: number): string {
+  return index % 2 === 0 ? "white" : "oklch(0.98 0.003 250)";
+}
+
+function buildEmployeeAttendanceRows(
+  employeeBreakdown: EmployeePayrollBreakdown[],
+): string {
+  const rows = employeeBreakdown
+    .map(
+      (row, index) => `<tr style="background:${rowBg(index)};">
+        <td>${index + 1}</td>
+        <td>${row.employeeCode}</td>
+        <td>${row.employeeName}</td>
+        <td>${row.present}</td>
+        <td>${row.otHours}</td>
+        <td>${row.gradeDays}</td>
+        <td>${row.gradeRate}</td>
+        <td>${formatInr(row.basicAmount)}</td>
+        <td>${formatInr(row.washingAllowanceAmount)}</td>
+        <td>${formatInr(row.adjustmentAllowanceAmount)}</td>
+      </tr>`,
+    )
+    .join("");
+
+  const sum = (key: keyof EmployeePayrollBreakdown) =>
+    employeeBreakdown.reduce((total, row) => total + Number(row[key]), 0);
+
+  const totalRow = `<tr class="pr-total-row">
+    <td colspan="3">TOTAL</td>
+    <td>${sum("present")}</td>
+    <td>${sum("otHours")}</td>
+    <td>${sum("gradeDays")}</td>
+    <td>${sum("gradeRate")}</td>
+    <td>${formatInr(sum("basicAmount"))}</td>
+    <td>${formatInr(sum("washingAllowanceAmount"))}</td>
+    <td>${formatInr(sum("adjustmentAllowanceAmount"))}</td>
+  </tr>`;
+
+  return rows + totalRow;
+}
+
+function buildBillingDetailRows(
+  employeeBreakdown: EmployeePayrollBreakdown[],
+): string {
+  const rows = employeeBreakdown
+    .map(
+      (row, index) => `<tr style="background:${rowBg(index)};">
+        <td style="text-align:left;">${row.employeeName}</td>
+        <td>${formatInr(row.basicAmount)}</td>
+        <td>${formatInr(row.washingAllowanceAmount)}</td>
+        <td>${formatInr(row.adjustmentAllowanceAmount)}</td>
+        <td>${formatInr(row.gradeAmount)}</td>
+        <td>${formatInr(row.otAmount)}</td>
+        <td>${formatInr(row.totalKr)}</td>
+        <td>${formatInr(row.pf)}</td>
+        <td>${formatInr(row.esi)}</td>
+        <td>${formatInr(row.canteenBill)}</td>
+        <td style="font-weight:600;">${formatInr(row.payableAmount)}</td>
+      </tr>`,
+    )
+    .join("");
+
+  const sum = (key: keyof EmployeePayrollBreakdown) =>
+    employeeBreakdown.reduce((total, row) => total + Number(row[key]), 0);
+
+  const totalRow = `<tr class="pr-total-row">
+    <td style="text-align:left;">TOTAL</td>
+    <td>${formatInr(sum("basicAmount"))}</td>
+    <td>${formatInr(sum("washingAllowanceAmount"))}</td>
+    <td>${formatInr(sum("adjustmentAllowanceAmount"))}</td>
+    <td>${formatInr(sum("gradeAmount"))}</td>
+    <td>${formatInr(sum("otAmount"))}</td>
+    <td>${formatInr(sum("totalKr"))}</td>
+    <td>${formatInr(sum("pf"))}</td>
+    <td>${formatInr(sum("esi"))}</td>
+    <td>${formatInr(sum("canteenBill"))}</td>
+    <td>${formatInr(sum("payableAmount"))}</td>
+  </tr>`;
+
+  return rows + totalRow;
+}
+
+function buildFinalBillRows(totals: InvoiceTotals, subtotal: number): string {
+  const rows: {
+    label: string;
+    amount: string;
+    bold?: boolean;
+    shaded?: boolean;
+  }[] = [
+    {
+      label: "Base billing amount (wages, allowances, OT)",
+      amount: formatInr(subtotal),
+    },
+    { label: "PF", amount: formatInr(totals.totalPf) },
+    { label: "ESI", amount: formatInr(totals.totalEsi) },
+    { label: "Service charge", amount: formatInr(totals.serviceCharge) },
+    {
+      label: "Subtotal",
+      amount: formatInr(totals.total),
+      bold: true,
+      shaded: true,
+    },
+    { label: "CGST", amount: formatInr(totals.cgst) },
+    { label: "SGST", amount: formatInr(totals.sgst) },
+    {
+      label: "Grand Total",
+      amount: formatInr(totals.totalPayable),
+      bold: true,
+      shaded: true,
+    },
+  ];
+
+  return rows
+    .map((row, index) => {
+      const isLast = index === rows.length - 1;
+      const borderTop =
+        index === 0 ? "none" : "1px solid oklch(0.92 0.005 250)";
+      const style = [
+        `background:${row.shaded ? "oklch(0.97 0.008 250)" : "white"}`,
+        `font-weight:${row.bold ? 700 : 400}`,
+        `border-top:${isLast ? "2px solid oklch(0.55 0.15 250)" : borderTop}`,
+      ].join(";");
+
+      return `<div class="pr-final-row" style="${style};">
+        <span>${row.label}</span>
+        <span>${row.amount}</span>
+      </div>`;
+    })
+    .join("");
 }
 
 function formatStatus(status: string): string {
@@ -58,6 +196,7 @@ function buildLegacyInvoiceHtml(invoice: Invoice): string {
   <title>Invoice ${invoice.invoiceNumber}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    @page { size: A4; margin: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: #1a1a1a;
@@ -100,7 +239,11 @@ function buildLegacyInvoiceHtml(invoice: Invoice): string {
 </html>`;
 }
 
-function buildInvoiceHtml(invoice: Invoice): string {
+function buildInvoiceHtml(
+  invoice: Invoice,
+  business: BusinessProfile,
+  client: Client,
+): string {
   if (!invoice.totals || !invoice.employeeBreakdown?.length) {
     return buildLegacyInvoiceHtml(invoice);
   }
@@ -114,6 +257,11 @@ function buildInvoiceHtml(invoice: Invoice): string {
     invoiceDate: invoice.invoiceDate
       ? formatInvoiceDate(invoice.invoiceDate)
       : invoice.monthYear,
+    monthYear: invoice.monthYear,
+    employeeCount: String(employeeBreakdown.length),
+    employeeAttendanceRows: buildEmployeeAttendanceRows(employeeBreakdown),
+    billingDetailRows: buildBillingDetailRows(employeeBreakdown),
+    finalBillRows: buildFinalBillRows(totals, subtotal),
     subtotal: formatInr(subtotal),
     totalPf: formatInr(totals.totalPf),
     totalEsi: formatInr(totals.totalEsi),
@@ -121,15 +269,37 @@ function buildInvoiceHtml(invoice: Invoice): string {
     sgst: formatInr(totals.sgst),
     cgst: formatInr(totals.cgst),
     totalPayable: formatInr(totals.totalPayable),
+    businessName: business.name,
+    businessGstin: business.gstin,
+    businessLine1: business.line1,
+    businessLine2: business.line2,
+    businessCityStateCountry: `${business.city}, ${business.state}, ${business.country}`,
+    businessPincode: business.pincode,
+    businessEmail: business.email,
+    businessPhone: business.phone,
+    businessHsnCode: business.hsnCode,
+    businessPanNumber: business.panNumber,
+    clientName: client.name,
+    clientGstin: client.gstin,
+    clientLine1: client.line1,
+    clientLine2: client.line2,
+    clientCityStatePincode: `${client.city}, ${client.state}, ${client.pincode}`,
   });
 }
 
-export async function generateInvoicePDF(invoice: Invoice): Promise<Buffer> {
-  const html = buildInvoiceHtml(invoice);
+export async function generateInvoicePDF(
+  invoice: Invoice,
+  business: BusinessProfile,
+  client: Client,
+): Promise<Buffer> {
+  const html = buildInvoiceHtml(invoice, business, client);
   return renderPdfFromHtml(html);
 }
 
-function buildSalarySlipHtml(slip: SalarySlip): string {
+function buildSalarySlipHtml(
+  slip: SalarySlip,
+  business: BusinessProfile,
+): string {
   const template = readFileSync(getSalarySlipTemplatePath(), "utf-8");
 
   return replacePlaceholders(template, {
@@ -144,12 +314,73 @@ function buildSalarySlipHtml(slip: SalarySlip): string {
     pf: formatInr(slip.pf),
     esi: formatInr(slip.esi),
     payableAmount: formatInr(slip.payableAmount),
+    businessName: business.name,
+    businessGstin: business.gstin,
+    businessPanNumber: business.panNumber,
+    businessHsnCode: business.hsnCode,
+    businessEmail: business.email,
+    businessPhone: business.phone,
+    businessLine1: business.line1,
+    businessLine2: business.line2,
+    businessCityStatePincode: `${business.city}, ${business.state} - ${business.pincode}`,
   });
 }
 
-export async function generateSalarySlipPDF(slip: SalarySlip): Promise<Buffer> {
-  const html = buildSalarySlipHtml(slip);
+function getSalarySlipFilename(slip: SalarySlip): string {
+  return `salary-slip-${slip.employeeCode}-${slip.monthYear}.pdf`;
+}
+
+export async function generateSalarySlipPDF(
+  slip: SalarySlip,
+  business: BusinessProfile,
+): Promise<Buffer> {
+  const html = buildSalarySlipHtml(slip, business);
   return renderPdfFromHtml(html);
+}
+
+export async function generateSalarySlipPDFs(
+  slips: SalarySlip[],
+  business: BusinessProfile,
+): Promise<{ filename: string; buffer: Buffer }[]> {
+  const browser = await chromium.launch({
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
+  
+  try {
+    const results: { filename: string; buffer: Buffer }[] = [];
+
+    for (const slip of slips) {
+      const html = buildSalarySlipHtml(slip, business);
+      const buffer = await renderPdfFromHtmlWithBrowser(browser, html);
+      results.push({
+        filename: getSalarySlipFilename(slip),
+        buffer,
+      });
+    }
+
+    return results;
+  } finally {
+    await browser.close();
+  }
+}
+
+async function renderPdfFromHtmlWithBrowser(
+  browser: Browser,
+  html: string,
+): Promise<Buffer> {
+  const page = await browser.newPage();
+
+  try {
+    await page.setContent(html, { waitUntil: "domcontentloaded" });
+    const pdf = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      preferCSSPageSize: true,
+    });
+    return Buffer.from(pdf);
+  } finally {
+    await page.close();
+  }
 }
 
 async function renderPdfFromHtml(html: string): Promise<Buffer> {
@@ -160,10 +391,7 @@ async function renderPdfFromHtml(html: string): Promise<Buffer> {
   );
 
   try {
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "domcontentloaded" });
-    const pdf = await page.pdf({ format: "A4", printBackground: true });
-    return Buffer.from(pdf);
+    return await renderPdfFromHtmlWithBrowser(browser, html);
   } finally {
     await browser.close();
   }
