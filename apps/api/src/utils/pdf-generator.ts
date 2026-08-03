@@ -100,12 +100,25 @@ function buildBillingDetailRows(
 }
 
 function buildFinalBillRows(totals: InvoiceTotals, subtotal: number): string {
-  const rows: { label: string; amount: string; bold?: boolean; shaded?: boolean }[] = [
-    { label: "Base billing amount (wages, allowances, OT)", amount: formatInr(subtotal) },
+  const rows: {
+    label: string;
+    amount: string;
+    bold?: boolean;
+    shaded?: boolean;
+  }[] = [
+    {
+      label: "Base billing amount (wages, allowances, OT)",
+      amount: formatInr(subtotal),
+    },
     { label: "PF", amount: formatInr(totals.totalPf) },
     { label: "ESI", amount: formatInr(totals.totalEsi) },
     { label: "Service charge", amount: formatInr(totals.serviceCharge) },
-    { label: "Subtotal", amount: formatInr(totals.total), bold: true, shaded: true },
+    {
+      label: "Subtotal",
+      amount: formatInr(totals.total),
+      bold: true,
+      shaded: true,
+    },
     { label: "CGST", amount: formatInr(totals.cgst) },
     { label: "SGST", amount: formatInr(totals.sgst) },
     {
@@ -119,7 +132,8 @@ function buildFinalBillRows(totals: InvoiceTotals, subtotal: number): string {
   return rows
     .map((row, index) => {
       const isLast = index === rows.length - 1;
-      const borderTop = index === 0 ? "none" : "1px solid oklch(0.92 0.005 250)";
+      const borderTop =
+        index === 0 ? "none" : "1px solid oklch(0.92 0.005 250)";
       const style = [
         `background:${row.shaded ? "oklch(0.97 0.008 250)" : "white"}`,
         `font-weight:${row.bold ? 700 : 400}`,
@@ -282,7 +296,10 @@ export async function generateInvoicePDF(
   return renderPdfFromHtml(html);
 }
 
-function buildSalarySlipHtml(slip: SalarySlip, business: BusinessProfile): string {
+function buildSalarySlipHtml(
+  slip: SalarySlip,
+  business: BusinessProfile,
+): string {
   const template = readFileSync(getSalarySlipTemplatePath(), "utf-8");
 
   return replacePlaceholders(template, {
@@ -325,12 +342,10 @@ export async function generateSalarySlipPDFs(
   slips: SalarySlip[],
   business: BusinessProfile,
 ): Promise<{ filename: string; buffer: Buffer }[]> {
-  const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH;
-
-  const browser = await chromium.launch(
-    executablePath ? { executablePath } : undefined,
-  );
-
+  const browser = await chromium.launch({
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
+  
   try {
     const results: { filename: string; buffer: Buffer }[] = [];
 
