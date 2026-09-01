@@ -1,7 +1,9 @@
 import type { Employee, EmployeeInvoiceInput } from "@repo/types";
-import { formatMonthYear, getCalendarDaysInMonth } from "@repo/payroll";
-
-import { toIsoDate } from "@/lib/format";
+import {
+  billingMonthToIso,
+  formatMonthYear,
+  getCalendarDaysInMonth,
+} from "@repo/payroll";
 
 export type EmployeeInputFormRow = EmployeeInvoiceInput & {
   employeeName: string;
@@ -20,14 +22,15 @@ export function createEmptyEmployeeInput(employee: Employee): EmployeeInputFormR
 
 export function validateEmployeeInputs(
   inputs: EmployeeInputFormRow[],
-  invoiceDate: Date,
+  billingMonth: string,
 ): string | null {
   if (inputs.length === 0) {
     return "At least one employee is required.";
   }
 
-  const daysInMonth = getCalendarDaysInMonth(toIsoDate(invoiceDate));
-  const monthYear = formatMonthYear(toIsoDate(invoiceDate));
+  const billingMonthIso = billingMonthToIso(billingMonth);
+  const daysInMonth = getCalendarDaysInMonth(billingMonthIso);
+  const monthYear = formatMonthYear(billingMonthIso);
 
   for (const row of inputs) {
     const fields: Array<[string, number]> = [

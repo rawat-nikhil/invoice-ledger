@@ -2,6 +2,7 @@ import { Router } from "express";
 import mongoose from "mongoose";
 import { z } from "zod";
 import {
+  billingMonthToIso,
   calculateEmployeeRow,
   calculateInvoiceTotals,
   formatMonthYear,
@@ -54,6 +55,7 @@ const employeeInvoiceInputSchema = z.object({
 const generateInvoiceSchema = z.object({
   invoiceNumber: z.string().min(1),
   invoiceDate: z.string().min(1),
+  billingMonth: z.string().regex(/^\d{4}-\d{2}$/),
   employeeInputs: z.array(employeeInvoiceInputSchema).min(1),
 });
 
@@ -71,9 +73,10 @@ invoicesRouter.post("/generate", async (req, res) => {
     return res.status(400).json({ error: "Invalid request body" });
   }
 
-  const { invoiceNumber, invoiceDate, employeeInputs } = parsed.data;
-  const daysInMonth = getCalendarDaysInMonth(invoiceDate);
-  const monthYear = formatMonthYear(invoiceDate);
+  const { invoiceNumber, invoiceDate, billingMonth, employeeInputs } = parsed.data;
+  const billingMonthIso = billingMonthToIso(billingMonth);
+  const daysInMonth = getCalendarDaysInMonth(billingMonthIso);
+  const monthYear = formatMonthYear(billingMonthIso);
 
   for (const input of employeeInputs) {
     if (input.present > daysInMonth || input.gradeDays > daysInMonth) {
@@ -123,7 +126,7 @@ invoicesRouter.post("/generate", async (req, res) => {
         throw new Error("Employee not found");
       }
 
-      return calculateEmployeeRow(employee, input, invoiceDate);
+      return calculateEmployeeRow(employee, input, billingMonthIso);
     })
     .sort((a, b) => a.employeeCode.localeCompare(b.employeeCode));
 

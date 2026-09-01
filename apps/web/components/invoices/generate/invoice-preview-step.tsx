@@ -13,6 +13,7 @@ import { formatDisplayDate, formatInr } from "@/lib/format";
 
 type InvoicePreviewStepProps = {
   invoiceDate: Date;
+  billingMonthLabel: string;
   employeeCount: number;
   totals: InvoiceTotals;
   submitting: boolean;
@@ -35,6 +36,7 @@ const SUMMARY_ROWS: Array<{
 
 export function InvoicePreviewStep({
   invoiceDate,
+  billingMonthLabel,
   employeeCount,
   totals,
   submitting,
@@ -52,6 +54,10 @@ export function InvoicePreviewStep({
         </CardHeader>
         <CardContent className="space-y-4">
           <dl className="grid gap-2 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-muted-foreground">Billing month</dt>
+              <dd className="font-medium">{billingMonthLabel}</dd>
+            </div>
             <div>
               <dt className="text-muted-foreground">Invoice date</dt>
               <dd className="font-medium">{formatDisplayDate(invoiceDate)}</dd>

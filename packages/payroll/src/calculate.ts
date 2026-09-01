@@ -22,6 +22,11 @@ export function getCalendarDaysInMonth(isoDate: string): number {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 }
 
+/** Converts a billing month (`YYYY-MM`) to the first day of that month as ISO date. */
+export function billingMonthToIso(billingMonth: string): string {
+  return `${billingMonth}-01`;
+}
+
 export function calculateEmployeeRow(
   employee: Employee,
   input: EmployeeInvoiceInput,

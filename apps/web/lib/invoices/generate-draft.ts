@@ -21,6 +21,7 @@ export type GenerateDraft = {
   currentStep: GenerateStep;
   invoiceNumber: string;
   invoiceDate: string | null;
+  billingMonth: string | null;
   acknowledged: boolean;
   employeeInputs: SavedEmployeeInput[];
 };
@@ -86,6 +87,14 @@ export function loadGenerateDraft(): GenerateDraft | null {
       return null;
     }
 
+    if (
+      parsed.billingMonth !== null &&
+      parsed.billingMonth !== undefined &&
+      typeof parsed.billingMonth !== "string"
+    ) {
+      return null;
+    }
+
     if (!Array.isArray(parsed.employeeInputs)) {
       return null;
     }
@@ -98,6 +107,7 @@ export function loadGenerateDraft(): GenerateDraft | null {
       currentStep: parsed.currentStep,
       invoiceNumber: parsed.invoiceNumber ?? "",
       invoiceDate: parsed.invoiceDate ?? null,
+      billingMonth: parsed.billingMonth ?? null,
       acknowledged: parsed.acknowledged,
       employeeInputs: parsed.employeeInputs,
     };
@@ -151,6 +161,7 @@ export function toGenerateDraft(
   formData: {
     invoiceNumber: string;
     invoiceDate: Date | undefined;
+    billingMonth: string;
     acknowledged: boolean;
     employeeInputs: EmployeeInputFormRow[];
   },
@@ -160,6 +171,7 @@ export function toGenerateDraft(
     currentStep,
     invoiceNumber: formData.invoiceNumber,
     invoiceDate: formData.invoiceDate ? isoDate(formData.invoiceDate) : null,
+    billingMonth: formData.billingMonth || null,
     acknowledged: formData.acknowledged,
     employeeInputs: formData.employeeInputs.map(
       ({ employeeId, present, otHours, gradeDays, canteenBill }) => ({
