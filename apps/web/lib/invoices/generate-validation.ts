@@ -46,10 +46,6 @@ export function validateEmployeeInputs(
       }
     }
 
-    if (row.present > daysInMonth) {
-      return `Present days cannot exceed ${daysInMonth} for ${monthYear} (${row.employeeName}).`;
-    }
-
     if (row.gradeDays > daysInMonth) {
       return `Grade days cannot exceed ${daysInMonth} for ${monthYear} (${row.employeeName}).`;
     }

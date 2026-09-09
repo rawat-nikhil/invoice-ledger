@@ -79,9 +79,9 @@ invoicesRouter.post("/generate", async (req, res) => {
   const monthYear = formatMonthYear(billingMonthIso);
 
   for (const input of employeeInputs) {
-    if (input.present > daysInMonth || input.gradeDays > daysInMonth) {
+    if (input.gradeDays > daysInMonth) {
       return res.status(400).json({
-        error: `Present and grade days cannot exceed ${daysInMonth} for ${monthYear}.`,
+        error: `Grade days cannot exceed ${daysInMonth} for ${monthYear}.`,
       });
     }
   }
