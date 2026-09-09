@@ -18,18 +18,22 @@ import { cn } from "@/lib/utils";
 type InvoiceMetaStepProps = {
   invoiceNumber: string;
   invoiceDate: Date | undefined;
+  billingMonth: string;
   acknowledged: boolean;
   onInvoiceNumberChange: (invoiceNumber: string) => void;
   onInvoiceDateChange: (date: Date | undefined) => void;
+  onBillingMonthChange: (billingMonth: string) => void;
   onAcknowledgedChange: (checked: boolean) => void;
 };
 
 export function InvoiceMetaStep({
   invoiceNumber,
   invoiceDate,
+  billingMonth,
   acknowledged,
   onInvoiceNumberChange,
   onInvoiceDateChange,
+  onBillingMonthChange,
   onAcknowledgedChange,
 }: InvoiceMetaStepProps) {
   return (
@@ -43,6 +47,20 @@ export function InvoiceMetaStep({
           placeholder="e.g. INV-001"
           className="max-w-sm"
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="billing-month">Billing month</Label>
+        <Input
+          id="billing-month"
+          type="month"
+          value={billingMonth}
+          onChange={(event) => onBillingMonthChange(event.target.value)}
+          className="max-w-sm"
+        />
+        <p className="text-sm text-muted-foreground">
+          Payroll period for present days and salary calculation.
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -77,7 +95,7 @@ export function InvoiceMetaStep({
         />
         <div className="space-y-1">
           <Label htmlFor="acknowledgement" className="cursor-pointer">
-            I confirm the invoice date and payroll period are correct
+            I confirm the invoice date and billing month are correct
           </Label>
           <p className="text-sm text-muted-foreground">
             This acknowledgement is required before entering employee payroll

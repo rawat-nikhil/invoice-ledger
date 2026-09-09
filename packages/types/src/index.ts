@@ -72,6 +72,7 @@ export type UpdateInvoiceInput = Omit<CreateInvoiceInput, "invoiceNumber">;
 export interface GenerateInvoiceInput {
   invoiceNumber: string;
   invoiceDate: string;
+  billingMonth: string;
   employeeInputs: EmployeeInvoiceInput[];
 }
 

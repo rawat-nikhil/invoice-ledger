@@ -5,8 +5,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Employee } from "@repo/types";
 import {
+  billingMonthToIso,
   calculateEmployeeRow,
   calculateInvoiceTotals,
+  formatMonthYear,
 } from "@repo/payroll";
 
 import { EmployeeInputStep } from "@/components/invoices/generate/employee-input-step";
@@ -39,6 +41,7 @@ import { parseEmployeeXlsxFile } from "@/lib/invoices/parse-employee-xlsx";
 type GenerateFormData = {
   invoiceNumber: string;
   invoiceDate: Date | undefined;
+  billingMonth: string;
   acknowledged: boolean;
   employeeInputs: EmployeeInputFormRow[];
 };
@@ -49,6 +52,7 @@ function createInitialFormData(): GenerateFormData {
   return {
     invoiceNumber: draft?.invoiceNumber ?? "",
     invoiceDate: draft?.invoiceDate ? new Date(draft.invoiceDate) : undefined,
+    billingMonth: draft?.billingMonth ?? "",
     acknowledged: draft?.acknowledged ?? false,
     employeeInputs: [],
   };
@@ -152,11 +156,11 @@ export default function GenerateInvoicePage() {
 
   const breakdown = useMemo(
     () => {
-      if (!formData.invoiceDate) {
+      if (!formData.billingMonth) {
         return [];
       }
 
-      const invoiceDate = toIsoDate(formData.invoiceDate);
+      const billingMonthIso = billingMonthToIso(formData.billingMonth);
 
       return formData.employeeInputs.flatMap((input) => {
         const employee = employeeMap.get(input.employeeId);
@@ -165,10 +169,10 @@ export default function GenerateInvoicePage() {
           return [];
         }
 
-        return [calculateEmployeeRow(employee, input, invoiceDate)];
+        return [calculateEmployeeRow(employee, input, billingMonthIso)];
       });
     },
-    [formData.employeeInputs, formData.invoiceDate, employeeMap],
+    [formData.employeeInputs, formData.billingMonth, employeeMap],
   );
 
   const totals = useMemo(
@@ -176,9 +180,18 @@ export default function GenerateInvoicePage() {
     [breakdown],
   );
 
+  const billingMonthLabel = useMemo(
+    () =>
+      formData.billingMonth
+        ? formatMonthYear(billingMonthToIso(formData.billingMonth))
+        : "",
+    [formData.billingMonth],
+  );
+
   const step1Valid =
     formData.invoiceNumber.trim() !== "" &&
     formData.invoiceDate !== undefined &&
+    formData.billingMonth !== "" &&
     formData.acknowledged;
 
   function handleEmployeeFieldChange(
@@ -239,6 +252,7 @@ export default function GenerateInvoicePage() {
     setFormData({
       invoiceNumber: "",
       invoiceDate: undefined,
+      billingMonth: "",
       acknowledged: false,
       employeeInputs: employees.map(createEmptyEmployeeInput),
     });
@@ -259,13 +273,13 @@ export default function GenerateInvoicePage() {
     }
 
     if (currentStep === 2) {
-      if (!formData.invoiceDate) {
+      if (!formData.billingMonth) {
         return;
       }
 
       const error = validateEmployeeInputs(
         formData.employeeInputs,
-        formData.invoiceDate,
+        formData.billingMonth,
       );
 
       if (error) {
@@ -292,7 +306,7 @@ export default function GenerateInvoicePage() {
   }
 
   async function handleConfirm() {
-    if (!formData.invoiceDate) {
+    if (!formData.invoiceDate || !formData.billingMonth) {
       return;
     }
 
@@ -303,6 +317,7 @@ export default function GenerateInvoicePage() {
       const invoice = await generateInvoice({
         invoiceNumber: formData.invoiceNumber.trim(),
         invoiceDate: toIsoDate(formData.invoiceDate),
+        billingMonth: formData.billingMonth,
         employeeInputs: formData.employeeInputs.map(
           ({ employeeId, present, otHours, gradeDays, canteenBill }) => ({
             employeeId,
@@ -362,12 +377,16 @@ export default function GenerateInvoicePage() {
         <InvoiceMetaStep
           invoiceNumber={formData.invoiceNumber}
           invoiceDate={formData.invoiceDate}
+          billingMonth={formData.billingMonth}
           acknowledged={formData.acknowledged}
           onInvoiceNumberChange={(invoiceNumber) =>
             setFormData((prev) => ({ ...prev, invoiceNumber }))
           }
           onInvoiceDateChange={(date) =>
             setFormData((prev) => ({ ...prev, invoiceDate: date }))
+          }
+          onBillingMonthChange={(billingMonth) =>
+            setFormData((prev) => ({ ...prev, billingMonth }))
           }
           onAcknowledgedChange={(acknowledged) =>
             setFormData((prev) => ({ ...prev, acknowledged }))
@@ -391,9 +410,10 @@ export default function GenerateInvoicePage() {
         <SalaryCalculationStep breakdown={breakdown} />
       ) : null}
 
-      {currentStep === 4 && formData.invoiceDate ? (
+      {currentStep === 4 && formData.invoiceDate && formData.billingMonth ? (
         <InvoicePreviewStep
           invoiceDate={formData.invoiceDate}
+          billingMonthLabel={billingMonthLabel}
           employeeCount={breakdown.length}
           totals={totals}
           submitting={submitting}

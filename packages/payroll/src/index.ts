@@ -8,6 +8,7 @@ export {
   WORKING_DAYS,
 } from "./constants";
 export {
+  billingMonthToIso,
   calculateEmployeeRow,
   calculateInvoiceTotals,
   formatMonthYear,
