@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Building2,
   FileText,
+  Gift,
   LayoutDashboard,
   Receipt,
   Users,
@@ -27,6 +28,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Invoice", href: "/invoice", icon: FileText },
+  { label: "Bonus Invoice", href: "/bonus-invoice", icon: Gift },
   { label: "Salary Slip", href: "/salary-slip", icon: Receipt },
   { label: "Employee", href: "/employee", icon: Users },
   { label: "Third-party", href: "/third-party", icon: Building2 },

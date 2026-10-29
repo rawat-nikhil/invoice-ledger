@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { chromium, type Browser } from "playwright";
 import {
   EmployeeCategoryEnum,
+  type BonusInvoice,
   type BusinessProfile,
   type Client,
   type Employee,
@@ -159,6 +160,10 @@ function formatStatus(status: string): string {
 
 function getTemplatePath(): string {
   return join(process.cwd(), "templates", "invoice.html");
+}
+
+function getBonusInvoiceTemplatePath(): string {
+  return join(process.cwd(), "templates", "bonus-invoice.html");
 }
 
 function getSalarySlipTemplatePath(): string {
@@ -371,6 +376,50 @@ function buildInvoiceHtml(
     clientLine2: client.line2,
     clientCityStatePincode: `${client.city}, ${client.state}, ${client.pincode}`,
   });
+}
+
+function buildBonusInvoiceHtml(
+  invoice: BonusInvoice,
+  business: BusinessProfile,
+  client: Client,
+): string {
+  const template = readFileSync(getBonusInvoiceTemplatePath(), "utf-8");
+
+  return replacePlaceholders(template, {
+    invoiceNumber: invoice.invoiceNumber,
+    financialYear: getIndianFinancialYearFromIsoDate(invoice.invoiceDate),
+    invoiceDate: formatInvoiceDate(invoice.invoiceDate),
+    title: escapeHtml(invoice.title),
+    bonusTotal: formatInr(invoice.bonusTotal),
+    serviceCharge: formatInr(invoice.serviceCharge),
+    sgst: formatInr(invoice.sgst),
+    cgst: formatInr(invoice.cgst),
+    totalPayable: formatInr(invoice.totalPayable),
+    businessName: business.name,
+    businessGstin: business.gstin,
+    businessLine1: business.line1,
+    businessLine2: business.line2,
+    businessCityStateCountry: `${business.city}, ${business.state}, ${business.country}`,
+    businessPincode: business.pincode,
+    businessEmail: business.email,
+    businessPhone: business.phone,
+    businessHsnCode: business.hsnCode,
+    businessPanNumber: business.panNumber,
+    clientName: client.name,
+    clientGstin: client.gstin,
+    clientLine1: client.line1,
+    clientLine2: client.line2,
+    clientCityStatePincode: `${client.city}, ${client.state}, ${client.pincode}`,
+  });
+}
+
+export async function generateBonusInvoicePDF(
+  invoice: BonusInvoice,
+  business: BusinessProfile,
+  client: Client,
+): Promise<Buffer> {
+  const html = buildBonusInvoiceHtml(invoice, business, client);
+  return renderPdfFromHtml(html);
 }
 
 export async function generateInvoicePDF(
