@@ -1,4 +1,5 @@
 import type {
+  BonusInvoiceTotals,
   Employee,
   EmployeeInvoiceInput,
   EmployeePayrollBreakdown,
@@ -103,6 +104,28 @@ export function calculateInvoiceTotals(
     total,
     sgst,
     cgst,
+    totalPayable,
+  };
+}
+
+export function calculateBonusInvoiceTotals(
+  employees: { bonus: number }[],
+): BonusInvoiceTotals {
+  const bonusTotal = round2(
+    employees.reduce((sum, row) => sum + row.bonus, 0),
+  );
+  const serviceCharge = round2(bonusTotal * SERVICE_CHARGE_RATE);
+  const taxableAmount = round2(bonusTotal + serviceCharge);
+  const cgst = round2(taxableAmount * GST_RATE);
+  const sgst = round2(taxableAmount * GST_RATE);
+  const totalPayable = round2(taxableAmount + cgst + sgst);
+
+  return {
+    bonusTotal,
+    serviceCharge,
+    taxableAmount,
+    cgst,
+    sgst,
     totalPayable,
   };
 }

@@ -9,6 +9,7 @@ export {
 } from "./constants";
 export {
   billingMonthToIso,
+  calculateBonusInvoiceTotals,
   calculateEmployeeRow,
   calculateInvoiceTotals,
   formatMonthYear,

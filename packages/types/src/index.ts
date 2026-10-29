@@ -76,6 +76,44 @@ export interface GenerateInvoiceInput {
   employeeInputs: EmployeeInvoiceInput[];
 }
 
+export interface BonusInvoiceEmployee {
+  payCode: string;
+  name: string;
+  totalDays: number;
+  bonus: number;
+}
+
+export interface BonusInvoiceTotals {
+  bonusTotal: number;
+  serviceCharge: number;
+  taxableAmount: number;
+  cgst: number;
+  sgst: number;
+  totalPayable: number;
+}
+
+export interface BonusInvoice {
+  id: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  title: string;
+  employees: BonusInvoiceEmployee[];
+  bonusTotal: number;
+  serviceCharge: number;
+  cgst: number;
+  sgst: number;
+  totalPayable: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBonusInvoiceInput {
+  invoiceNumber: string;
+  invoiceDate: string;
+  title: string;
+  employees: BonusInvoiceEmployee[];
+}
+
 export interface SalarySlip extends EmployeePayrollBreakdown {
   id: string;
   employeeId: string;

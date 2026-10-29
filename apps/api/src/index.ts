@@ -5,6 +5,7 @@ import { connectDb, disconnectDb, getDbStatus } from "./db/connect";
 import { authMiddleware } from "./middleware/authMiddleware";
 import { authRouter } from "./routes/auth";
 import { employeesRouter } from "./routes/employees";
+import { bonusInvoicesRouter } from "./routes/bonus-invoices";
 import { invoicesRouter } from "./routes/invoices";
 import { profileRouter } from "./routes/profile";
 import { salarySlipsRouter } from "./routes/salary-slips";
@@ -38,6 +39,7 @@ app.use((req, res, next) => {
 
 app.use("/employees", employeesRouter);
 app.use("/invoices", invoicesRouter);
+app.use("/bonus-invoices", bonusInvoicesRouter);
 app.use("/profile", profileRouter);
 app.use("/salary-slips", salarySlipsRouter);
 

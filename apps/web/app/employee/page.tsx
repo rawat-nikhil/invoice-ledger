@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { Employee } from "@repo/types";
-import { Plus, Search } from "lucide-react";
+import { Plus, Printer, Search } from "lucide-react";
 
 import { EmployeeFormDialog } from "@/components/employees/employee-form-dialog";
 import { EmployeeStatusDialog } from "@/components/employees/employee-status-dialog";
@@ -20,7 +20,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ApiError } from "@/lib/api";
-import { getEmployees, type GetEmployeesParams } from "@/lib/api/employees";
+import {
+  fetchEmployeeListDocument,
+  getEmployees,
+  type GetEmployeesParams,
+} from "@/lib/api/employees";
+import { printHtmlDocument } from "@/lib/print-html";
 
 type DialogMode = "create" | "edit" | "status" | null;
 type StatusFilter = NonNullable<GetEmployeesParams["status"]>;
@@ -40,6 +45,7 @@ export default function EmployeePage() {
   const [sort, setSort] = useState<EmployeeSortField>("employeeCode");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
+  const [exporting, setExporting] = useState(false);
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null,
@@ -86,6 +92,27 @@ export default function EmployeePage() {
 
     setSort(field);
     setOrder("asc");
+  }
+
+  async function handleExport() {
+    setExporting(true);
+    setError(null);
+
+    try {
+      const html = await fetchEmployeeListDocument({
+        search: debouncedSearch || undefined,
+        sort,
+        order,
+        status: statusFilter,
+      });
+      printHtmlDocument(html);
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Failed to export employees.",
+      );
+    } finally {
+      setExporting(false);
+    }
   }
 
   function openCreateDialog() {
@@ -147,10 +174,22 @@ export default function EmployeePage() {
           </Select>
         </div>
 
-        <Button type="button" onClick={openCreateDialog}>
-          <Plus />
-          Add Employee
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void handleExport()}
+            disabled={loading || exporting || employees.length === 0}
+            aria-busy={exporting}
+          >
+            <Printer />
+            Export
+          </Button>
+          <Button type="button" onClick={openCreateDialog}>
+            <Plus />
+            Add Employee
+          </Button>
+        </div>
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
