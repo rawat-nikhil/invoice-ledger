@@ -1,13 +1,15 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium, type Browser } from "playwright";
-import type {
-  BusinessProfile,
-  Client,
-  EmployeePayrollBreakdown,
-  Invoice,
-  InvoiceTotals,
-  SalarySlip,
+import {
+  EmployeeCategoryEnum,
+  type BusinessProfile,
+  type Client,
+  type Employee,
+  type EmployeePayrollBreakdown,
+  type Invoice,
+  type InvoiceTotals,
+  type SalarySlip,
 } from "@repo/types";
 
 function formatInr(amount: number): string {
@@ -161,6 +163,53 @@ function getTemplatePath(): string {
 
 function getSalarySlipTemplatePath(): string {
   return join(process.cwd(), "templates", "salary-slip.html");
+}
+
+function getEmployeeListTemplatePath(): string {
+  return join(process.cwd(), "templates", "employee-list.html");
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function formatEmployeeCategory(category: Employee["category"]): string {
+  switch (category) {
+    case EmployeeCategoryEnum.SEMI_SKILLED:
+      return "Semi-skilled";
+    case EmployeeCategoryEnum.UNSKILLED:
+      return "Un-skilled";
+    default:
+      return "Skilled";
+  }
+}
+
+function buildEmployeeRows(employees: Employee[]): string {
+  if (employees.length === 0) {
+    return `<tr><td colspan="10">No employees found.</td></tr>`;
+  }
+
+  return employees
+    .map(
+      (employee) => `<tr>
+        <td>${escapeHtml(employee.employeeCode)}</td>
+        <td>${escapeHtml(employee.name)}</td>
+        <td>${escapeHtml(formatEmployeeCategory(employee.category))}</td>
+        <td>${escapeHtml(employee.grade)}</td>
+        <td>${escapeHtml(employee.department)}</td>
+        <td class="text-right">${formatInr(employee.gradeRate)}</td>
+        <td class="text-right">${formatInr(employee.basicPay)}</td>
+        <td class="text-right">${formatInr(employee.adjustmentAllowance)}</td>
+        <td class="text-right">${formatInr(employee.washingAllowance)}</td>
+        <td>${employee.isActive ? "Active" : "Inactive"}</td>
+      </tr>`,
+    )
+    .join("");
 }
 
 function replacePlaceholders(
@@ -360,6 +409,41 @@ function buildSalarySlipHtml(
     businessLine1: business.line1,
     businessLine2: business.line2,
     businessCityStatePincode: `${business.city}, ${business.state} - ${business.pincode}`,
+  });
+}
+
+export function buildEmployeeListHtml(
+  employees: Employee[],
+  business: BusinessProfile,
+  options: { statusLabel: string; search: string },
+): string {
+  const template = readFileSync(getEmployeeListTemplatePath(), "utf-8");
+  const printedDate = new Date().toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const countLabel =
+    employees.length === 1 ? "1 employee" : `${employees.length} employees`;
+  const searchLabel =
+    options.search.length > 0
+      ? ` · Search: ${escapeHtml(options.search)}`
+      : "";
+
+  return replacePlaceholders(template, {
+    employeeRows: buildEmployeeRows(employees),
+    summary: `Printed ${printedDate} · ${countLabel} · ${escapeHtml(options.statusLabel)}${searchLabel}`,
+    businessName: escapeHtml(business.name),
+    businessGstin: escapeHtml(business.gstin),
+    businessLine1: escapeHtml(business.line1),
+    businessLine2: escapeHtml(business.line2),
+    businessCityStatePincode: escapeHtml(
+      `${business.city}, ${business.state} - ${business.pincode}`,
+    ),
+    businessEmail: escapeHtml(business.email),
+    businessPhone: escapeHtml(business.phone),
+    businessHsnCode: escapeHtml(business.hsnCode),
+    businessPanNumber: escapeHtml(business.panNumber),
   });
 }
 
